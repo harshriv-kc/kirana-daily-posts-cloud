@@ -1,0 +1,7 @@
+# runtime artifacts (regenerated every run — never committed)
+pdfs/
+request_body.json
+post_*.json
+post_*.log
+__pycache__/
+*.pyc
