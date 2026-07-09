@@ -3,6 +3,21 @@
   "dedup_window_days": 7,
   "runs": [
     {
+      "date": "2026-07-10",
+      "samachar_hero": "चीनी (तेजी) - कमजोर मानसून व बढ़ी मांग से 6-7% महंगी; मिल डिलीवरी 4370/4500 प्रति क्विंटल",
+      "soya_oil_direction": "सोया रिफाइंड तेजी + सरसों तेल तेजी (दोनों 100-150 बढ़े; सरसों तेल 15800/16000; सरसों बीज जयपुर 8050 तीसरे दिन +50; कच्ची घानी 1610/10किलो; मिलों की मांग, आवक 3.5 लाख बोरी घटी)",
+      "dal_shakkar_pick": "काबुली चना (तेजी; दिल्ली 9700/9800, आयात घटा व स्टॉक कम से आगे और तेजी; देसी चना 5975 स्थिर)",
+      "other_commodity_pick": "जीरा (मंदी/नरम; 22400 प्रति क्विंटल, ऊंचे दाम पर ग्राहकी कमजोर, आगे और नरमी के आसार)",
+      "rujhan_quiz_commodity": "तूर/अरहर",
+      "trending_1": "दिल्ली में FSSAI ने 50 हजार+ नकली लेबल/गड़बड़ी वाला खाद्य सामान पकड़ा (ओखला; पुराने माल पर नई एक्सपायरी छापी जा रही थी, मशीन-ठप्पे जब्त, FIR) - दुकानदार लेबल/एक्सपायरी जांचें",
+      "trending_1_theme": "raid-bust",
+      "trending_2": "गांव-कस्बों में FMCG/किराना की मांग शहरों से ज्यादा रफ्तार से बढ़ रही, बास्केट साइज बढ़ा, कंपनियां किराना पर फोकस कर रहीं - स्टॉक बढ़ाने का मौका",
+      "trending_2_theme": "rural-demand",
+      "scheme": "NPS वात्सल्य - बच्चे (18 से कम) के नाम पेंशन खाता, 250 रु से शुरू/साल में कम से कम 1000 रु, कोई ऊपरी सीमा नहीं, बैंक-डाकघर-eNPS से आवेदन, PRAN",
+      "_note": "Posted for 10 जुलाई using VK-09-July-2026 paper (डाक 10 जुलाई). Normal next-day run (fetch 7:32PM IST, after 7:30 cutoff -> targeted tomorrow 10 जुलाई). Banned themes last 7 days (upi-payment/festival-demand/fuel-economy/monsoon-weather/tech/ondc-online/fmcg-price/new-product) all avoided; picked raid-bust (FSSAI, last used 07-02, allowed) + rural-demand (last 07-01, allowed), one caution + one opportunity = net-balanced. Soya direction तेजी repeats 07-08/07-09 but is data-driven (paper: mustard 3rd-day rally on mills demand + falling arrivals) - not fabricated; noted per operator rule. Samachar hero=चीनी, fresh vs recent heroes (मसाले/तेल/चांदी/उड़द). Rujhan VAR2 (date 10 mod 4 = 2), spotlight सरसों तेल.",
+      "date_of_run": "2026-07-09"
+    },
+    {
       "date": "2026-07-09",
       "samachar_hero": "मसाले/धनिया (तेजी) - माल की कमी से धनिया 200 चढ़कर 16200/16400; लालमिर्च 23500, सौंठ 32500 मजबूत",
       "soya_oil_direction": "सोया रिफाइंड तेजी (100-200 बढ़ा -> ~15400) / सरसों तेल तेजी (एक्सपेलर 200 बढ़ा -> ~15850); सरसों बीज 7650-7750 मजबूत; आवक ~3.5 लाख बोरी घटी + सोया DOC 61000 पार की उम्मीद",
