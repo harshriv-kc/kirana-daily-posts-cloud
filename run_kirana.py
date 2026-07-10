@@ -244,8 +244,8 @@ def main():
     pf.add_argument("--posting-date", help="YYYY-MM-DD (override; default: decided from ledger + IST time)")
     pf.add_argument("--max-back", type=int, default=4,
                     help="how many days back to search for a paper (default 4, covers weekends)")
-    pf.add_argument("--cutoff", default="19:30",
-                    help="IST cutoff HH:MM; at/after = next-day run, before = same-day run (default 19:30)")
+    pf.add_argument("--cutoff", default="18:00",
+                    help="IST cutoff HH:MM; at/after = next-day run, before = same-day run (default 18:00; the cloud routine fires ~7:06 PM so this must be below that)")
     pf.add_argument("--ledger", default=DEFAULT_LEDGER,
                     help="path to the dedup ledger that records posted dates")
     pf.set_defaults(func=cmd_fetch)
