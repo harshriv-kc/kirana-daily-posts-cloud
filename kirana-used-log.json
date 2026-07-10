@@ -3,6 +3,21 @@
   "dedup_window_days": 7,
   "runs": [
     {
+      "date": "2026-07-11",
+      "samachar_hero": "चावल-इथेनॉल घोटाला (सरकारी सस्ता चावल इथेनॉल प्लांटों की बजाय राइस मिलों में बिका, ₹2320/क्विंटल सरकारी भाव बनाम ₹2800 बाजार भाव, जांच शुरू)",
+      "soya_oil_direction": "सरसों तेल तेजी (आवक घटने से 100 बढ़कर 16100; कच्ची घानी जयपुर 16300; दादरी 15800) / सोया तेल स्थिर-सुस्त (ठहराव, 15500; मप्र 14600; शिकागो वायदा नरम)",
+      "dal_shakkar_pick": "शक्कर/चीनी (मंदी/सुस्ती; दिल्ली फुटकर 4370/4500, हाजिर 4650/4750; गुड़ भी 50-100 घटा; कमजोर मांग से आगे नरमी की उम्मीद)",
+      "other_commodity_pick": "हल्दी (तेजी; सटोरियों की सक्रियता से 200 बढ़कर 17000/21500 प्रति क्विंटल)",
+      "rujhan_quiz_commodity": "सोयाबीन",
+      "trending_1": "कानपुर में डेयरी व्यापारी के साथ नए तरीके की साइबर ठगी - बिना OTP, बिना लिंक खाते से ₹2.80 लाख उड़े, ठग ने खुद फोन कर 1930 पर शिकायत करने की चुनौती दी - दुकानदार सतर्क रहें",
+      "trending_1_theme": "scam",
+      "trending_2": "FSSAI लाइसेंस अब हमेशा के लिए वैध, रिन्यू की झंझट खत्म; बेसिक रजिस्ट्रेशन सीमा ₹12 लाख से बढ़ाकर ₹1.5 करोड़ - छोटे किराना दुकानदारों को बड़ी राहत",
+      "trending_2_theme": "fssai-license",
+      "scheme": "वरिष्ठ नागरिक बचत योजना (SCSS) - 60+ आयु, 8.2% सालाना ब्याज हर तिमाही, ₹1000 से ₹30 लाख तक जमा, 5 साल (+3 साल विस्तार), डाकघर/बैंक से आवेदन",
+      "_note": "Posted for 11 जुलाई using VK-10-July-2026 paper (डाक 11 जुलाई). Normal next-day run (fetch after 18:00 IST cutoff). Banned themes last 7 days (raid-bust/rural-demand/upi-payment/festival-demand/fuel-economy/monsoon-weather/tech/ondc-online/fmcg-price/new-product) all avoided; picked scam (last used 06-27, off cooldown, fresh Kanpur no-OTP fraud story 09 जुलाई) + fssai-license (last used 07-01, off cooldown, evergreen benefit) - one caution + one relief, net-balanced. dal_shakkar rotated off the 5 recently-used dals (काबुली चना/मूंग/मसूर/उड़द/तूर) onto शक्कर (last used 07-02). Samachar hero fresh (front-page rice-ethanol scam story, not a repeat of any recent price-mover hero). Rujhan VAR: date 11 mod 4 = 3 -> VAR3 requires >=4% single-commodity move, none qualified today, fell back to VAR1 FOMO Locked Trend per spec fallback rule.",
+      "date_of_run": "2026-07-10"
+    },
+    {
       "date": "2026-07-10",
       "samachar_hero": "चीनी (तेजी) - कमजोर मानसून व बढ़ी मांग से 6-7% महंगी; मिल डिलीवरी 4370/4500 प्रति क्विंटल",
       "soya_oil_direction": "सोया रिफाइंड तेजी + सरसों तेल तेजी (दोनों 100-150 बढ़े; सरसों तेल 15800/16000; सरसों बीज जयपुर 8050 तीसरे दिन +50; कच्ची घानी 1610/10किलो; मिलों की मांग, आवक 3.5 लाख बोरी घटी)",
