@@ -3,6 +3,21 @@
   "dedup_window_days": 7,
   "runs": [
     {
+      "date": "2026-07-12",
+      "samachar_hero": "उड़द-अरहर (दलहन) तेजी - पाइपलाइन में माल की कमी व आयात महंगा पड़ने से उड़द ₹110/क्विंटल की ओर; अरहर लेमन 7700/7800, दिल्ली उड़द 8875/8900 प्रति क्विंटल",
+      "soya_oil_direction": "सोया रिफाइंड मंदी + सरसों तेल मंदी (दोनों ~₹100 घटकर करीब 15400/क्विंटल; सरसों दाना जयपुर -25 होकर 8025; तेल मिलों/ग्राहकों की कमजोर मांग व आयातकों की बिकवाली; अखाद्य तेल मजबूत)",
+      "dal_shakkar_pick": "राजमा चित्रा (तेजी; आवक कम व लिवाली मजबूत से 9800 से 10000/क्विंटल, तेजी कायम)",
+      "other_commodity_pick": "धनिया (तेजी; बढ़िया माल की मांग व आवक कम से ~₹100 बढ़कर 16400/16500 प्रति क्विंटल)",
+      "rujhan_quiz_commodity": "मक्का",
+      "trending_1": "दालों (उड़द/अरहर/चना) के दाम चढ़े, पर सरकार द्वारा ड्यूटी-फ्री आयात जारी रखने व बफर स्टॉक बाजार में उतारने से आगे दाम काबू में आने की उम्मीद; अरहर आगे नरम पड़ सकती है",
+      "trending_1_theme": "supply-chain",
+      "trending_2": "Government e-Marketplace (GeM) पर मुफ्त रजिस्ट्रेशन से छोटे दुकानदार/MSME सरकारी विभागों को सीधे सामान बेचकर नई कमाई कर सकते हैं; कोई फीस नहीं, MSME को प्राथमिकता, तय समय पर भुगतान",
+      "trending_2_theme": "store-growth",
+      "scheme": "राष्ट्रीय बचत पत्र (NSC) - डाकघर, सालाना 7.7% ब्याज (सालाना चक्रवृद्धि, 5 साल बाद ब्याज सहित एकमुश्त), ₹1000 से शुरू कोई ऊपरी सीमा नहीं, 80C में ₹1.5 लाख तक टैक्स छूट, सरकार की गारंटी",
+      "_note": "Posted for 12 जुलाई using VK-11-July-2026 paper (डाक 12 जुलाई). Normal next-day run (fetch 7:07PM IST, after 18:00 cutoff -> targeted 12 जुलाई; last_posted 11 जुलाई). Banned trending themes last 7 days (scam/fssai-license/raid-bust/rural-demand/upi-payment/festival-demand/fuel-economy/monsoon-weather/tech/ondc-online/fmcg-price/new-product) all avoided; picked supply-chain (dal-relief govt policy, off cooldown) + store-growth (GeM, last 07-02, off cooldown) - one relief + one opportunity, net-positive. Oil direction finally मंदी (both सरसों+सोया ~100 down) breaking the recent तेजी streak - data-driven from PDF page 6 (weak oil-mill demand, mustard seed -25 to 8025). dal_shakkar rotated off 6 recently-used (शक्कर/काबुली चना/मूंग/मसूर/उड़द/तूर) onto राजमा (fresh). other=धनिया (fresh vs हल्दी/जीरा/सोना-चांदी/लालमिर्च). Samachar hero उड़द-अरहर दलहन (front-page lead; distinct from 07-06 solo-उड़द hero via combined pair + import/pipeline-shortage driver). Rujhan quiz मक्का (fresh), VAR: 12 mod 4 = 0 -> VAR4 Minimal Physical Speedometer.",
+      "date_of_run": "2026-07-11"
+    },
+    {
       "date": "2026-07-11",
       "samachar_hero": "चावल-इथेनॉल घोटाला (सरकारी सस्ता चावल इथेनॉल प्लांटों की बजाय राइस मिलों में बिका, ₹2320/क्विंटल सरकारी भाव बनाम ₹2800 बाजार भाव, जांच शुरू)",
       "soya_oil_direction": "सरसों तेल तेजी (आवक घटने से 100 बढ़कर 16100; कच्ची घानी जयपुर 16300; दादरी 15800) / सोया तेल स्थिर-सुस्त (ठहराव, 15500; मप्र 14600; शिकागो वायदा नरम)",
