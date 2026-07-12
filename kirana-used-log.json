@@ -3,6 +3,21 @@
   "dedup_window_days": 7,
   "runs": [
     {
+      "date": "2026-07-13",
+      "samachar_hero": "बासमती/बारीक चावल (मिश्रित हीरो) - 1401 स्टीम चावल 10000 से गिरकर 9500/क्विंटल (₹300-500 सस्ता), पर धान की आवक घटने से स्टॉक कम, बाजार फिर बढ़ेगा; साथ में उड़द-मूंग-मोठ तेज, खाद्य तेल नरम, सर्राफा टूटा",
+      "soya_oil_direction": "सोया रिफाइंड मंदी + सरसों तेल मंदी (दोनों ~₹100 घटे; सोया रिफाइंड ~15400/क्विंटल, सरसों कच्ची घानी ~1690/10किलो, सरसों बीज जयपुर -25 होकर 8025; तेल मिलों व ग्राहकों की कमजोर मांग; अखाद्य/अरंडी तेल 14900 मजबूत, पाम में बड़ी गिरावट की संभावना कम)",
+      "dal_shakkar_pick": "मोठ (तेजी; पुराना स्टॉक कम व नई फसल ढाई माह दूर, दिल्ली 5900 से 6500/क्विंटल की ओर, भुजिया-नमकीन मांग)",
+      "other_commodity_pick": "मेथीदाना (तेजी/मजबूती; मानसून सीजन में मांग व आवक कम से ~7500/क्विंटल मजबूत, आगे मजबूती के आसार)",
+      "rujhan_quiz_commodity": "मूंग",
+      "trending_1": "सरकार की 2026-27 OMSS नीति - सरकारी भंडार से आटा मिलों को ~2585-2600/क्विंटल गेहूं बेचा जाएगा; भरपूर सरकारी स्टॉक से गेहूं-आटा-मैदा-सूजी के दाम काबू में रहेंगे, कम बारिश के बावजूद महंगाई का डर कम",
+      "trending_1_theme": "agri-commodity",
+      "trending_2": "CAIT का स्वागत - सरकार 14 जुलाई से High-Frequency Economic Barometer शुरू करेगी; GST वसूली, UPI लेनदेन, e-way बिल, बिजली खपत, बैंकिंग आदि के रियल-टाइम आंकड़े छोटे दुकानदारों व MSME को मांग पहले से पहचानकर सही स्टॉक फैसले में मदद देंगे",
+      "trending_2_theme": "trade-assoc",
+      "scheme": "सार्वजनिक भविष्य निधि (PPF) - बैंक/डाकघर, ~7.1% सालाना ब्याज (सरकार तिमाही तय), ₹500 से ₹1.5 लाख/साल, 15 साल, जमा+ब्याज+मैच्योरिटी तीनों टैक्स-फ्री (EEE), 80C में ₹1.5 लाख छूट, कुछ साल बाद कर्ज व आंशिक निकासी की सुविधा",
+      "_note": "Posted for 13 जुलाई using VK-11-July-2026 paper (डाक 12 जुलाई) via WEEKEND FALLBACK - VK-12 (Sunday) paper 404, VK-11 (Saturday) is freshest; gap_days=2, weekend_fallback true. NOTE: this is the SAME VK-11 paper yesterday (12 जुलाई) used, so oil-direction axis is again मंदी - data-driven from the identical paper, NOT fabricated and could not differ without lying (per operator no-fabrication rule; flagged in report). All other axes rotated fresh: hero बासमती चावल (fresh vs yesterday उड़द-अरहर दलहन hero; last rice hero 06-29, 14 days), dal मोठ (never used, off every recent dal - राजमा/शक्कर/काबुली/मूंग/मसूर/उड़द/तूर), other मेथीदाना (never used, off हल्दी/धनिया/जीरा/सोना-चांदी/लालमिर्च/सौंठ/मखाना/बादाम), rujhan मूंग (fresh, off मक्का/सोयाबीन/तूर/चना/हल्दी/मसूर/गेहूं). TRENDING THEME COOLDOWN enforced: all 14 themes used in last 7 days (supply-chain/store-growth/scam/fssai-license/raid-bust/rural-demand/upi-payment/festival-demand/fuel-economy/monsoon-weather/tech/ondc-online/fmcg-price/new-product) BANNED and avoided; picked agri-commodity (wheat OMSS relief, off cooldown) + trade-assoc (CAIT barometer, fresh 12 जुलाई, off cooldown) - both net-positive, unrelated, no breaking-event exemption needed. Scheme PPF (fresh, not in avoid-list; savings-type like recent NSC/SCSS/POMIS/KVP but a distinct EEE long-term instrument). Rujhan VAR: 13 mod 4 = 1 -> VAR1 FOMO Locked Trend. Samachar PN hero चांदी+उड़द (differs from 4 commodity-post PNs सोया/मोठ/मेथीदाना/मूंग).",
+      "date_of_run": "2026-07-12"
+    },
+    {
       "date": "2026-07-12",
       "samachar_hero": "उड़द-अरहर (दलहन) तेजी - पाइपलाइन में माल की कमी व आयात महंगा पड़ने से उड़द ₹110/क्विंटल की ओर; अरहर लेमन 7700/7800, दिल्ली उड़द 8875/8900 प्रति क्विंटल",
       "soya_oil_direction": "सोया रिफाइंड मंदी + सरसों तेल मंदी (दोनों ~₹100 घटकर करीब 15400/क्विंटल; सरसों दाना जयपुर -25 होकर 8025; तेल मिलों/ग्राहकों की कमजोर मांग व आयातकों की बिकवाली; अखाद्य तेल मजबूत)",
