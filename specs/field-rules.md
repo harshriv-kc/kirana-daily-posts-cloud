@@ -27,9 +27,14 @@ in the project) is the full spec; this is the condensed working version.
 5. **रुझान** — the day's prediction board. Cover **as many commodities as the VK भाव-भविष्य / जिंस-विश्लेषण
    boxes give** (typically 12–18), each as its own `<p>` line in the fixed 3-part shape: **अभी का भाव**
    (current price + unit from the paper) → **रुझान** (short reason/direction) → **आगे का संभावित भाव**
-   (target price where the paper states one, e.g. "6500 की ओर"; else the expected direction). Bold the
-   commodity name and key numbers with `<b>`; group under `तेजी के आसार वाली जिंसें` and
-   `नरमी या स्थिर रहने वाली जिंसें` headings. Prices come ONLY from the paper — never fabricate a target.
+   (target price where the paper states one, e.g. "6500 की ओर"; else the expected direction). **Where the
+   paper's numbers allow it (current price + a stated target or change), ALSO give the expected % rise/fall**
+   — either derived from the two paper numbers (e.g. मोठ 5900→6500 ≈ +10%) or a %/figure the paper itself
+   prints (e.g. हल्दी वायदा +1.47%). The **% is OPTIONAL and NEVER fabricated**: include it only when it
+   follows from real paper numbers, and simply omit it (give direction only) when the paper prints no figure —
+   do not write filler like "प्रतिशत नहीं". Bold the commodity name and key numbers with `<b>`; group under
+   `तेजी के आसार वाली जिंसें` and `नरमी या स्थिर रहने वाली जिंसें` headings. Prices AND percentages come ONLY
+   from the paper — never fabricate a target or a %.
    `commodity` = `रुझान`. **The रुझान THUMBNAIL still shows only 4 commodities max** (the 4-card image),
    even though the body lists many — pick the 4 with the clearest moves.
 6 & 7. **Pan India Trending News 1 & 2** — the **2 most relevant** kirana stories of the day, picked
