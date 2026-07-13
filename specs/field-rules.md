@@ -24,8 +24,14 @@ in the project) is the full spec; this is the condensed working version.
    चना दाल, शक्कर}.
 4. **Other commodities** — spices / dry fruits / gold-silver / grains. `commodity` from the
    approved list (मसाले, हल्दी, जीरा, सोना-चांदी, बादाम, मखाना, चावल, गेहूं, ...).
-5. **रुझान** — 4–5 commodities, near-term (3–7 day) outlook in simple paragraphs, key moves bolded
-   with `<b>`. `commodity` = `रुझान`.
+5. **रुझान** — the day's prediction board. Cover **as many commodities as the VK भाव-भविष्य / जिंस-विश्लेषण
+   boxes give** (typically 12–18), each as its own `<p>` line in the fixed 3-part shape: **अभी का भाव**
+   (current price + unit from the paper) → **रुझान** (short reason/direction) → **आगे का संभावित भाव**
+   (target price where the paper states one, e.g. "6500 की ओर"; else the expected direction). Bold the
+   commodity name and key numbers with `<b>`; group under `तेजी के आसार वाली जिंसें` and
+   `नरमी या स्थिर रहने वाली जिंसें` headings. Prices come ONLY from the paper — never fabricate a target.
+   `commodity` = `रुझान`. **The रुझान THUMBNAIL still shows only 4 commodities max** (the 4-card image),
+   even though the body lists many — pick the 4 with the clearest moves.
 6 & 7. **Pan India Trending News 1 & 2** — the **2 most relevant** kirana stories of the day, picked
    from the FULL theme pool (fraud/scam, raids, FMCG, economy/fuel, supply chain, agri/monsoon/weather,
    trade assoc, UPI-payment benefits, rural-demand, new-product/distributorship, festival/seasonal

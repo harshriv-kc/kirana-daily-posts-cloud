@@ -111,7 +111,9 @@ COMMODITIES (4 items, or 2-3 if fewer movements):
 4. [Commodity Hindi Name] - [मंदी के आसार / तेजी के आसार] - [DOWN/UP]
 ```
 
-Extract 4 commodities with clear price movement from the rujhan post_description.
+Extract 4 commodities with clear price movement from the rujhan post_description. **Thumbnail cap: max 4
+commodity cards, ALWAYS — even though the रुझान body now lists many commodities (12–18) with अभी → रुझान →
+आगे का भाव, the image shows only the 4 with the strongest/clearest moves.**
 
 ---
 
