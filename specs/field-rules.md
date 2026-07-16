@@ -104,7 +104,7 @@ filling variables from the post.
 ### Samachar / Trending News / Schemes (1920×1080 landscape)
 - Samachar: contextual commodity background, date+type, main headline, CTA "पूरी रिपोर्ट पढ़ें →".
 - Trending News 1 & 2: relevant contextual background, two-line headline, CTA based on story type.
-- Schemes: thumbnail **120×138**, text centred, CTA "अभी आवेदन करें →".
+- Schemes: **1920×1080 landscape** (same template as Trending News / Samachar — the old 120×138 centred format is discontinued), CTA "अभी आवेदन करें →".
 
 ### Commodity posts — सोया तेल, दाल/शक्कर, Other commodities (1920×1080 landscape)
 Minimal editorial-style commodity spotlight:
