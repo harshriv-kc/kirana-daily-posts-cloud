@@ -52,7 +52,7 @@ NOTE: UP-specific content has been discontinued. Generate only 8 posts daily (no
 **GROUPING LOGIC:**
 1. Read entire VK PDF → identify ALL commodities with price changes
 2. Sort into तेज (price increased), मंदा (price decreased), स्थिर (no change)
-3. Pick single biggest mover as HERO
+3. Pick single biggest mover as HERO. **HARD EXCLUSION: सोना-चांदी / सर्राफा (bullion — gold, silver, गिन्नी) must NEVER be the Samachar hero/star commodity, even if it is the single biggest rupee mover of the day. If bullion is the biggest mover, skip it for the hero and pick the next biggest kirana-relevant mover; still cover सोना-चांदी inside a तेज/मंदा card or the अन्य हलचल table as usual.**
 4. Group remaining into तेज and मंदा cards (combine related: e.g., all dals in one card, all spices in one card, all oils in one card, grains in one card)
 5. Small movers → अन्य हलचल table
 6. Unchanged items → स्थिर strip

@@ -8,7 +8,10 @@ in the project) is the full spec; this is the condensed working version.
 1. **Samachar** — pan-India mandi update. Special inline-styled HTML (hero card + तेज/मंदा cards +
    स्थिर strip + अन्य हलचल table + आज का सवाल + footer). तेज cards = red text `#c62828` on pink
    `#FFF5F5`; मंदा cards = green text `#2e7d32` on light-green `#F1F8F1` (box BGs fixed; only text
-   colour flips). Pick the single biggest mover as HERO. Attach correct unit to every price (सोना
+   colour flips). Pick the single biggest mover as HERO — **but सोना-चांदी / सर्राफा (bullion:
+   gold, silver, गिन्नी) can NEVER be the hero/star commodity, even when it is the day's single
+   biggest mover; in that case pick the next biggest kirana-relevant mover and cover सोना-चांदी in a
+   तेज/मंदा card or अन्य हलचल instead.** Attach correct unit to every price (सोना
    प्रति 10 ग्राम, चांदी प्रति किलो, दालें/चना/चीनी प्रति क्विंटल, तेल प्रति क्विंटल, कच्चा तेल डॉलर
    प्रति बैरल, etc.). **Pack it WIDE** — Samachar is the broadest post: sweep the whole paper
    (front articles + the अनाज/दाल-दलहन/सर्राफा/तेल-तिलहन rate tables + भाव-भविष्य boxes) and
