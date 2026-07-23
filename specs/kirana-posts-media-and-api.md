@@ -6,6 +6,14 @@
 
 Every post MUST include an `image_prompt` field. The API uses this to generate AI thumbnails.
 
+**HARD EXCLUSION — सोना-चांदी / सर्राफा (bullion: gold, silver, गिन्नी) must NEVER appear in ANY
+`image_prompt` or `pn_image_prompt`:** not as the background photo subject, not as the commodity
+name / headline text shown in the image, and not as one of the Rujhan 4-card thumbnail rows. Even
+on a day when bullion is the biggest mover (it can never be the Samachar hero anyway), choose a
+non-bullion, kirana-relevant commodity for every image background and every image headline. सोना-चांदी
+may still be mentioned in the text body (Samachar तेज/मंदा card, अन्य हलचल, रुझान body line) — the ban
+is only on depicting or naming it inside image_prompt / pn_image_prompt.
+
 ---
 
 ### 1. Commodity Posts — सोया तेल, दाल/शक्कर, Other commodities

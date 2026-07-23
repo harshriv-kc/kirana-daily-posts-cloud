@@ -104,6 +104,11 @@ see the master prompt's colour table; use the colours that go with the chosen bg
 Every post MUST have an `image_prompt`. Use the PART 1 + PART 2 templates from the master prompt,
 filling variables from the post.
 
+**HARD EXCLUSION:** सोना-चांदी / सर्राफा (gold, silver, गिन्नी) must NEVER appear in ANY `image_prompt`
+or `pn_image_prompt` — not as the background subject, not in the image headline/commodity name, not as a
+Rujhan 4-card row. Pick a non-bullion commodity for every image background and headline (it may still be
+covered in the text body). This is in addition to the Samachar-hero bullion ban above.
+
 ### Samachar / Trending News / Schemes (1920×1080 landscape)
 - Samachar: contextual commodity background, date+type, main headline, CTA "पूरी रिपोर्ट पढ़ें →".
 - Trending News 1 & 2: relevant contextual background, two-line headline, CTA based on story type.
