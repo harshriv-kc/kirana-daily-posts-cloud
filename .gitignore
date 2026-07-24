@@ -3,5 +3,6 @@ pdfs/
 request_body.json
 post_*.json
 post_*.log
+post_*.links.txt
 __pycache__/
 *.pyc
