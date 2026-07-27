@@ -5,8 +5,8 @@ run_kirana.py — fetch the latest available व्यापार केसर�
 kirana daily-posts routine, and decide WHICH posting date this run is for.
 
 DATE LOGIC (no rigid run_date+1 formula — decide logically):
-  The posting date is the EARLIEST date still owed (gap-fill, oldest first),
-  but never further ahead than the time of day allows.
+  The posting date is ALWAYS the date the clock allows right now (STAY CURRENT);
+  a run is due only while there is still something owed.
 
   1. last_posted = newest `date` recorded in the dedup ledger
                    (kirana-used-log.json -> runs[].date = posting_date).
@@ -15,18 +15,24 @@ DATE LOGIC (no rigid run_date+1 formula — decide logically):
         - run fires AT/AFTER 7:30 PM IST  -> max_allowed = today + 1  (evening = next-day run)
         - run fires BEFORE   7:30 PM IST  -> max_allowed = today      (same-day run / catch-up)
   4. posting_date:
-        - if next_owed <= max_allowed -> posting_date = next_owed   (do it)
+        - if next_owed <= max_allowed -> posting_date = max_allowed  (stay current)
         - else                        -> NOTHING DUE (already caught up; too early for next day)
 
-  Why this fixes the old bug: a missed evening run that fires after midnight
-  (e.g. 2 AM on the 28th) now correctly produces the 28th (today), because
-  before 7:30 PM max_allowed=today and the 28th is the gap still owed — instead
-  of the old run_date+1 jumping straight to the 29th and skipping the 28th.
+  Why NOT gap-fill (fixed 27-Jul-2026): backfilling the oldest owed date makes a
+  single missed run permanent. The Sat 25-Jul-2026 evening run was missed, so the
+  Sun 26-Jul run filled 26-Jul (same day) instead of 27-Jul — and every later
+  evening run would have kept filling the stale owed date, leaving the routine
+  exactly one day behind forever. Skipping the stale date(s) keeps it current;
+  any skipped dates are reported in date_decision.skipped_owed_dates.
+  To deliberately publish a missed day, run with --posting-date YYYY-MM-DD.
 
-  Examples (cutoff 7:30 PM IST):
+  Catch-up still works: a missed evening run that fires after midnight (e.g. 2 AM
+  on the 28th) still produces the 28th, because before the cutoff max_allowed=today.
+
+  Examples (cutoff 6:00 PM IST):
     - 28th 02:00, ledger last=27th -> next_owed=28, max=28 -> post 28  (catch-up for today)
     - 28th 19:30, ledger last=28th -> next_owed=29, max=29 -> post 29  (normal evening)
-    - 28th 19:30, ledger last=27th -> next_owed=28, max=29 -> post 28  (fill gap; 29 next run)
+    - 28th 19:30, ledger last=26th -> next_owed=27, max=29 -> post 29  (skip stale 27; stay current)
     - 28th 14:00, ledger last=28th -> next_owed=29, max=28 -> NOTHING DUE (too early for 29)
 
 PDF used = the LATEST AVAILABLE paper, searched backwards from (posting_date - 1).
@@ -157,8 +163,13 @@ def decide_posting_date(now_ist, cutoff, last_posted):
     else:
         next_owed = last_posted + timedelta(days=1)
         if next_owed <= max_allowed:
-            posting = next_owed
-            reason = ("fill oldest owed date"
+            # STAY CURRENT: never target a date older than the time-appropriate
+            # one. A missed run leaves a stale owed date behind; backfilling it
+            # publishes yesterday's date today and keeps the routine exactly one
+            # day behind forever. Skip the stale date(s) instead.
+            # (To deliberately publish a missed day, use --posting-date.)
+            posting = max_allowed
+            reason = ("skipped stale owed date(s) to stay current"
                       if next_owed < max_allowed else "normal next-day/same-day run")
         else:
             posting = None
@@ -176,6 +187,15 @@ def decide_posting_date(now_ist, cutoff, last_posted):
         "posting_date": posting.isoformat() if posting else None,
         "reason": reason,
     }
+    # Surface any owed dates this run deliberately skipped, so the operator can
+    # see (and if wanted, backfill with --posting-date) what was passed over.
+    if posting is not None and last_posted is not None:
+        skipped, d = [], last_posted + timedelta(days=1)
+        while d < posting:
+            skipped.append(d.isoformat())
+            d += timedelta(days=1)
+        if skipped:
+            decision["skipped_owed_dates"] = skipped
     return posting, decision
 
 
