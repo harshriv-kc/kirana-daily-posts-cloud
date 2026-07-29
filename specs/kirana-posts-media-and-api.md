@@ -129,7 +129,7 @@ commodity cards, ALWAYS — even though the रुझान body now lists many 
 
 **Applies to:** Pan India Trending News 1, Pan India Trending News 2, Pan India Schemes
 
-**Dimensions:** 1920×1080 landscape (News) / 120×138 (Schemes — text centred)
+**Dimensions:** 1920×1080 landscape (News AND Schemes — same size)
 
 #### PART 1 — Common Design Elements (copy verbatim)
 
@@ -153,10 +153,10 @@ Create a professional, modern, visually appealing thumbnail optimized for mobile
 AVOID: Rainbow colors, cluttered designs, poor text contrast
 ```
 
-For Schemes (change dimensions):
+For Schemes (SAME dimensions as News — 1920×1080 landscape):
 ```
-Create a highly clickable, eye-catching thumbnail (120x138px) for a scheme post in Hindi. Text will be in the centre.
-[rest same as above]
+Create a highly clickable, eye-catching landscape thumbnail (1920x1080px) for a scheme post in Hindi.
+[rest same as the Trending News template above — same 1920x1080 landscape layout, background/date/two-line headline/CTA]
 ```
 
 #### PART 2 — Variable Data
