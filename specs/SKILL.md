@@ -75,10 +75,15 @@ morning of the posting date will legitimately get `gap_days: 0` (cover date == p
 one day fresher); a run after a Sunday or a publisher skip will get `gap_days: 2+`. In every
 case the posting date comes from `fetch`, never from the paper's own cover or डाक date.
 
-**If `stale_reuse` is true** (the newest issue already produced an earlier run — unavoidable
-because Sundays have no edition): **post the full 8 anyway** and change every dedup axis.
-Never skip the day for this reason. Full rule + precedents: `kirana-posts-content.md` →
-"WHICH PAPER TO USE — THE LATEST-PAPER RULE".
+**If `stale_reuse` is true** — either because no paper was published (weekend/holiday) or
+because we are early and it is not up yet — **post the full 8 anyway.** Use the previous
+day's paper and change the **framing and the images**; **repeated prices are fine and are
+not a reason to skip or hedge.** A missing new paper never means a missing post day. Full
+rule + precedents: `kirana-posts-content.md` → "WHICH PAPER TO USE — THE LATEST-PAPER RULE".
+
+**If the run fails** (no paper at all, validation stuck, any item fails to publish, or the
+ledger push fails): **Slack DM Harsh — `U09K92G1U1X` — and nobody else.** A stale-paper
+reuse day is NOT a failure and gets no DM. See `kirana-posts-content.md` → "FAILURE ALERTS".
 
 ## Workflow
 

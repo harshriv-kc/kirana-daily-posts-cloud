@@ -34,29 +34,75 @@ Consequences by run time, for posting date P:
 | Evening of P−1 (~19:06 IST) | cover-dated P−1 (the P issue lands ~3h later) | 1 | dateline P−2 |
 | Morning of P (07:00–08:00 IST) | cover-dated P | 0 | dateline P−1 — one day fresher |
 
-### STALE-PAPER REUSE (weekend rule) — post anyway, change every axis
+### STALE-PAPER REUSE — post anyway, reframe, SAME PRICES ARE FINE
 
-Because Sundays have no edition, the newest available issue is sometimes **the same one
-a previous run already used**. `fetch` flags this as `stale_reuse: true` with
-`already_used_on`. This is **NOT an error and NOT a reason to post nothing** — the
-weekend rule is that a Fri/Sat paper is legitimately used for Sun/Mon.
+**OPERATOR RULE (non-negotiable): a missing new paper NEVER means a missing post day.
+There is no situation in which the routine posts nothing because the paper is old.**
 
-When `stale_reuse` is true:
+There are exactly two reasons the newest available issue is one an earlier run already
+used. `fetch` flags both identically as `stale_reuse: true` + `already_used_on`:
 
-1. **Post the full 8 as normal.** Do not stop, do not report "no fresh paper".
-2. **Deliberately change EVERY dedup axis** versus the run(s) that already used this
-   issue — Samachar hero, oil frame/direction, dal/shakkar pick, other-commodity pick,
-   Rujhan quiz commodity, both trending themes, and the scheme. The same paper supports
-   many different framings: re-lead the oil post from a different oil (e.g. सोया-led
-   मंदी one day, बिनौला/सरसों-led तेजी the next — both true, both in the same LEAD),
-   pick a different hero from the front-page leads, rotate to commodities the previous
-   run left in the स्थिर strip.
-3. Do not reuse a commodity the previous run used on **any** axis, even a different one.
-4. Record `pdf_used` in the ledger and start `_note` with
-   `*** STALE-PAPER REUSE (जानबूझकर, weekend rule) ***`, listing every axis you flipped.
+1. **Weekend or holiday — no paper was published.** Sundays never have an edition; the
+   publisher also skips the odd weekday and holiday stretches (no issue at all for
+   16–18 Aug 2026).
+2. **We are early — the paper is not up yet.** Rare at a 19:00 IST run, since the
+   cover-date-D issue lands 21:39–23:38 IST on D−1 and the run only needs the D−1
+   issue (already ~21h old). Can happen if the publisher is late.
+
+**Both cases get the SAME treatment: use the previous day's paper and post the full 8.**
+
+- **Prices repeat, and that is explicitly OK.** The rates in a reused issue are the same
+  rates. Do not treat repeated prices as "stale data", do not hedge about it in the copy,
+  and do not skip the day over it. The paper is the source of truth for prices, full stop.
+- **What MUST change is the framing and the images**, versus the run(s) named in
+  `already_used_on`:
+  - **Framing** — every dedup axis: Samachar hero, oil frame/direction, dal/shakkar pick,
+    other-commodity pick, Rujhan quiz commodity, both trending themes, the scheme. One
+    issue supports many honest framings: re-lead the oil post from a different oil in the
+    same LEAD (सोया-led मंदी one day, बिनौला/सरसों-led तेजी the next — both true), take a
+    different front-page lead as hero, promote commodities the previous run parked in the
+    स्थिर strip. Titles, hooks and PN copy must all be freshly written, not reworded.
+  - **Images** — every `image_prompt` and `pn_image_prompt` must be visibly different:
+    different commodity subject, different photo composition/angle/lighting, different
+    category pill, and the Rujhan 4-card set must show different commodities. A reader
+    scrolling two days must not see the same picture twice.
+- Do not reuse a commodity the previous run used on **any** axis, even a different one.
+- Record `pdf_used` in the ledger and start `_note` with
+  `*** STALE-PAPER REUSE (जानबूझकर, weekend rule) ***`, listing every axis you flipped.
 
 Precedents: 2026-08-16 / 2026-08-17 (both VK-15-August), 2026-08-01 / 2026-08-02
 (both VK-31-JULY), 2026-07-19 / 2026-07-20 (both VK-18).
+
+---
+
+## FAILURE ALERTS — Slack DM to Harsh, nobody else
+
+**If the run fails, tell Harsh on Slack. Direct message only — never a channel, never
+anyone else.** Target: user ID `U09K92G1U1X` (Harsh Shrivastava,
+harsh.shrivastava@kirana.club) via `slack_send_message` with `channel_id` set to that
+user ID.
+
+Alert on any of these:
+
+| Condition | How you detect it |
+|---|---|
+| No paper found at all | `fetch` returns `ok: false` (exit 2) |
+| Posts could not be drafted or validated | `validate()` keeps raising after fixes |
+| **Any item failed to publish** | `post_items.py` exits **non-zero** |
+| Ledger push to `main` failed | `git push` still failing after retries |
+
+**Do NOT alert for:** a normal clean run, or a stale-paper reuse day (that is expected
+behaviour, not a failure — it goes in the run report, not a Slack DM).
+
+**Judging the poster correctly:** HTTP 200 is NOT proof a post was created. The backend
+returns 200 with `{"success": false, "data":[{"success": false, "error": ...}]}` when the
+downstream News API fails. `post_items.py` now reads the body and exits non-zero if any
+item failed — trust its exit code and its `PUBLISHED / FAILED` line, never the raw status
+codes. (On 2026-08-17 the रुझान post came back 200 with
+`News API failed: API Error: 404` and the old code reported "Success: 8, Failed: 0".)
+
+Keep the DM short and factual: posting date, what failed, the error text, what did go
+live, and whether the ledger was pushed. Do not retry the poster.
 
 ### Ledger field
 
