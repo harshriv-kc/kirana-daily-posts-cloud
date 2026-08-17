@@ -68,6 +68,30 @@ posting date). So a paper dated 17 जून → posts for **18 जून**. Con
 Every `post_title` and heading uses the posting date in Hindi format with Arabic numerals:
 `18 जून:` (never Devanagari digits, never the event date).
 
+**This is the n+1 case, not a law.** The governing rule is the **latest-paper rule**: always
+draft from the newest issue published at run time, whatever its cover date — `run_kirana.py
+fetch` picks it and reports `pdf_used` / `gap_days` / `stale_reuse`. In every case the posting
+date comes from `fetch`, never from the paper's own cover or डाक date.
+
+**Schedule: 07:00 IST on the posting day, morning only — there is NO evening run.** At 07:00
+the same-day issue is already up 96% of the time, so the normal result is `gap_days: 0`
+(cover date == posting date). After a Sunday or a publisher skip you get `gap_days: 1+` and
+the reuse rule applies.
+
+**⏱ सोया तेल — the first user-visible post — must be live by 08:00 IST.** The pipeline has
+one hour. If you slip past 08:00, DM Harsh (`U09K92G1U1X`) straight away with the real
+timestamp so he can adjust the visible time by hand; do not wait for the run to finish.
+
+**If `stale_reuse` is true** — either because no paper was published (weekend/holiday) or
+because we are early and it is not up yet — **post the full 8 anyway.** Use the previous
+day's paper and change the **framing and the images**; **repeated prices are fine and are
+not a reason to skip or hedge.** A missing new paper never means a missing post day. Full
+rule + precedents: `kirana-posts-content.md` → "WHICH PAPER TO USE — THE LATEST-PAPER RULE".
+
+**If the run fails** (no paper at all, validation stuck, any item fails to publish, or the
+ledger push fails): **Slack DM Harsh — `U09K92G1U1X` — and nobody else.** A stale-paper
+reuse day is NOT a failure and gets no DM. See `kirana-posts-content.md` → "FAILURE ALERTS".
+
 ## Workflow
 
 1. **Read the VK PDF** (in `/mnt/user-data/uploads/`). It is in context as an image/PDF — decode

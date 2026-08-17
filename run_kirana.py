@@ -11,9 +11,13 @@ DATE LOGIC (no rigid run_date+1 formula — decide logically):
   1. last_posted = newest `date` recorded in the dedup ledger
                    (kirana-used-log.json -> runs[].date = posting_date).
   2. next_owed   = last_posted + 1 day   (the earliest day we still owe).
-  3. max_allowed = the furthest date this run may target, based on IST clock:
-        - run fires AT/AFTER 7:30 PM IST  -> max_allowed = today + 1  (evening = next-day run)
-        - run fires BEFORE   7:30 PM IST  -> max_allowed = today      (same-day run / catch-up)
+  3. max_allowed = the furthest date this run may target, based on IST clock and
+     the --cutoff (default 18:00 IST):
+        - run fires AT/AFTER the cutoff -> max_allowed = today + 1  (next-day run)
+        - run fires BEFORE   the cutoff -> max_allowed = today      (same-day run)
+     The routine now fires at 07:00 IST ON THE POSTING DAY, which is before the
+     cutoff, so max_allowed = today and posting_date = today. Keep the cutoff
+     ABOVE 07:00 or the morning run would target tomorrow instead.
   4. posting_date:
         - if next_owed <= max_allowed -> posting_date = max_allowed  (stay current)
         - else                        -> NOTHING DUE (already caught up; too early for next day)
@@ -35,9 +39,33 @@ DATE LOGIC (no rigid run_date+1 formula — decide logically):
     - 28th 19:30, ledger last=26th -> next_owed=27, max=29 -> post 29  (skip stale 27; stay current)
     - 28th 14:00, ledger last=28th -> next_owed=29, max=28 -> NOTHING DUE (too early for 29)
 
-PDF used = the LATEST AVAILABLE paper, searched backwards from (posting_date - 1).
-This naturally handles weekends (Sat/Sun paper often missing -> fall back to the
-most recent one). gap_days = posting_date - pdf_date_used; on a normal day == 1.
+LATEST-PAPER RULE: PDF used = the newest VK paper published by run time, searched
+backwards from the POSTING DATE ITSELF (not posting_date - 1). Whatever the clock
+says, the run always drafts from the freshest issue on the server.
+
+  Upload window, measured from Last-Modified over 26 issues (Jul-Aug 2026): the
+  paper cover-dated D goes live between 21:39 and 23:38 IST on D-1, median ~22:20.
+  Sunday editions are never published; the publisher also skips the odd weekday.
+
+  -> CURRENT SCHEDULE, 07:00 IST on day D: the cover-date-D paper is ~8h old and
+     is taken straight away. gap_days == 0. Hit rate 25/26 days (96%), with 5.9h
+     of margin against the latest observed upload. MORNING ONLY - the old ~19:06
+     IST evening run is RETIRED.
+  -> the retired evening run (~19:06 on D-1) could only ever see the D-1 paper,
+     because the cover-date-D issue lands ~3h after it. gap_days == 1.
+
+  The first user-visible post (सोया तेल) must be live by 08:00 IST, i.e. the whole
+  pipeline has one hour. If it slips past 08:00, DM Harsh (U09K92G1U1X) at once so
+  he can adjust the visible time by hand.
+
+gap_days = posting_date - pdf_date_used. weekend_fallback = gap_days > 1.
+
+STALE REUSE: when the newest available paper is the same issue an earlier run
+already used (unavoidable when the publisher skips a day), `stale_reuse` is true
+and `already_used_on` names that run. This is NOT an error and NOT a reason to
+skip the day — post anyway, but change every dedup axis (Samachar hero, oil
+frame/direction, dal/shakkar pick, other pick, Rujhan quiz commodity, both
+trending themes, scheme). See specs/kirana-posts-content.md.
 
 Posting itself is done by the existing Untitled.py (operator's poster) — NOT here.
 
@@ -55,6 +83,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timedelta, timezone, time as dtime, date as ddate
 
@@ -145,6 +174,30 @@ def _last_posted_date(ledger_path):
     return max(dates) if dates else None
 
 
+def _previously_used_pdfs(ledger_path):
+    """{lowercased VK filename -> posting_date that already used it}.
+
+    Lets a run detect that the newest published paper is the SAME issue a previous
+    run already drafted from (happens whenever the publisher skips a day — always
+    on Sundays). Reads the explicit `pdf_used` field, falling back to scraping the
+    filename out of `_note` for entries written before that field existed.
+    """
+    try:
+        with open(ledger_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return {}
+    seen = {}
+    for run in data.get("runs", []):
+        names = []
+        if run.get("pdf_used"):
+            names.append(str(run["pdf_used"]))
+        names += re.findall(r"VK-\d{1,2}-[A-Za-z]+-\d{4}\.pdf", str(run.get("_note", "")))
+        for n in names:
+            seen.setdefault(n.lower(), set()).add(run.get("date"))
+    return {k: sorted(d for d in v if d) for k, v in seen.items()}
+
+
 def _parse_cutoff(s):
     hh, mm = s.split(":")
     return dtime(int(hh), int(mm))
@@ -217,10 +270,20 @@ def cmd_fetch(args):
             }, ensure_ascii=False))
             return 3
 
-    # Search backwards for the newest available paper, starting the day BEFORE
-    # the posting date and going back max_back days (handles weekends).
-    start = posting - timedelta(days=1)
+    # LATEST-PAPER RULE: always use the newest VK paper published at run time.
+    # Search starts AT the posting date (not the day before) and walks back, so a
+    # run that fires after the publisher's upload window automatically picks up the
+    # fresher paper instead of yesterday's. Upload window (measured over 26 issues,
+    # Jul-Aug 2026 Last-Modified headers): the paper cover-dated D goes live between
+    # 21:39 and 23:38 IST on D-1, median ~22:20. So:
+    #   - CURRENT: 07:00 IST on day D -> cover-date-D paper IS up (~8h old); the
+    #     search hits it immediately. gap_days == 0. 96% of days.
+    #   - RETIRED evening slot (~19:06 on D-1) -> cover-date-D paper NOT up yet
+    #     (lands ~3h later); search fell through to D-1. gap_days == 1.
+    # Sunday editions never exist, so a Monday posting date legitimately falls back.
+    start = posting
     attempts = []
+    used_before = _previously_used_pdfs(args.ledger)
     for i in range(args.max_back + 1):
         d = start - timedelta(days=i)
         ok, url, payload, tried = _try_download(d)
@@ -235,12 +298,18 @@ def cmd_fetch(args):
             with open(path, "wb") as f:
                 f.write(payload)
             gap = (posting - d).days
+            prior = used_before.get(fname.lower())
             print(json.dumps({
                 "ok": True, "path": path, "url": url,
                 "posting_date": posting.isoformat(),
                 "pdf_date_used": d.isoformat(),
+                "pdf_used": fname,
                 "gap_days": gap,
                 "weekend_fallback": gap > 1,
+                # STALE REUSE: this exact issue already produced a previous run.
+                # Not an error — post anyway, but every dedup axis MUST change.
+                "stale_reuse": prior is not None,
+                "already_used_on": prior,
                 "bytes": len(payload),
                 "date_decision": decision,
                 "attempts": attempts,
@@ -265,7 +334,7 @@ def main():
     pf.add_argument("--max-back", type=int, default=4,
                     help="how many days back to search for a paper (default 4, covers weekends)")
     pf.add_argument("--cutoff", default="18:00",
-                    help="IST cutoff HH:MM; at/after = next-day run, before = same-day run (default 18:00; the cloud routine fires ~7:06 PM so this must be below that)")
+                    help="IST cutoff HH:MM; at/after = next-day run, before = same-day run (default 18:00). The routine now fires 07:00 IST on the POSTING DAY, so the cutoff must stay ABOVE 07:00 for that to count as a same-day run. Do not lower it below 07:00.")
     pf.add_argument("--ledger", default=DEFAULT_LEDGER,
                     help="path to the dedup ledger that records posted dates")
     pf.set_defaults(func=cmd_fetch)

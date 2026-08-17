@@ -150,6 +150,15 @@ stocking, or wallet?" — if not, drop it.
 
 ## Avoid repeating yesterday
 
+**Same-paper days are the hard case.** When `run_kirana.py fetch` reports `stale_reuse: true`,
+the newest published issue is one an earlier run already drafted from (Sundays have no
+edition, so this recurs). Post the full 8 anyway — never skip the day — but every axis below
+must differ from the run(s) named in `already_used_on`, and no commodity used there may
+reappear on *any* axis. The same issue supports several honest framings: the oil LEAD can be
+read सोया-led मंदी one day and बिनौला/सरसों-led तेजी the next, the hero can come from a
+different front-page lead, and commodities parked in yesterday's स्थिर strip can carry a post.
+See `kirana-posts-content.md` → "WHICH PAPER TO USE".
+
 Before drafting, retrieve yesterday's run (conversation_search "kirana posts" / recent_chats) and
 make today differ on: Samachar hero, oil direction, the dal/sugar pick, the Other pick, the rujhan
 quiz commodity, both trending topics, and the scheme. **For trending news, keep a 7-day rolling

@@ -10,6 +10,141 @@ You will not call the API directly. Instead, you will output one complete cURL, 
 
 ---
 
+## WHICH PAPER TO USE — THE LATEST-PAPER RULE (read first)
+
+**Always draft from the newest VK issue published at run time.** `run_kirana.py fetch`
+enforces this: it searches backwards starting AT the posting date (not the day before)
+and returns the first issue it finds, reporting `pdf_used`, `pdf_date_used`, `gap_days`,
+`stale_reuse` and `already_used_on`. Use whatever it hands you — never hand-pick an
+older issue, and never skip a day because the newest issue is not as fresh as you hoped.
+
+### When the paper gets published
+
+Measured from `Last-Modified` across 26 issues (Jul–Aug 2026): **the paper cover-dated D
+goes live between 21:39 and 23:38 IST on day D−1, median ~22:20 IST.**
+
+- **Sunday editions never exist.** The publisher also skips the occasional weekday
+  (e.g. 2026-07-29 Wed, 2026-08-01 Sat) and holiday stretches (no issue for 16–18 Aug 2026).
+- A Monday edition is uploaded on **Saturday** night, ~25h before its cover date.
+
+Consequences by run time, for posting date P:
+
+| Run fires | Newest issue on server | `gap_days` | Rate freshness |
+|---|---|---|---|
+| **07:00 IST on P — CURRENT SCHEDULE** | cover-dated P | **0** | dateline P−1 |
+| Evening of P−1 (~19:06 IST — RETIRED) | cover-dated P−1 (the P issue lands ~3h later) | 1 | dateline P−2 |
+
+### Schedule: 07:00 IST on the posting day. Morning only.
+
+**The routine runs at 07:00 IST on day P and there is NO evening run.** The old
+~19:06 IST evening slot is retired — do not post in the evening for the next day.
+
+At 07:00 the cover-date-P issue is ~8h old (uploaded 21:39–23:38 the previous night),
+leaving **5.9h of margin** against the latest observed upload. Measured hit rate:
+**25/26 days (96%)** get the same-day issue; the other day falls back to P−1, which is
+just the old behaviour and is covered by the reuse rule below.
+
+This also kills the weekly Sunday duplicate: a Monday edition is uploaded on **Saturday**
+night, so the Monday 07:00 run finds a real Monday paper — whereas the retired
+Sunday-evening run asked for a Sunday edition that never exists and used Saturday's paper
+a second time.
+
+`run_kirana.py`'s 18:00 IST cutoff must stay **above** the run time so 07:00 counts as a
+same-day run (`max_allowed = today`) and targets P. Do not lower it below 07:00.
+
+### ⏱ THE 08:00 DEADLINE — सोया तेल must be live by 8 AM
+
+**The first post visible to users is सोया तेल at 08:00 IST, so the whole pipeline has one
+hour.** Budget from the 2026-08-17 run: fetch ~1 min, PDF render + vision read ~10 min,
+web research ~5 min, drafting + QA ~15 min, validation ~1 min, poster ~17 min total with
+सोया तेल created ~5 min in. That fits inside the hour, but not by much.
+
+- Work briskly and do not gold-plate. If you are running late, cut research breadth
+  (TN1/TN2/scheme) before you cut commodity accuracy — prices are never rushed.
+- **If सोया तेल is not created by 08:00 IST, DM Harsh immediately** (`U09K92G1U1X`) with
+  the actual timestamp, so he can change the visible time for सोया तेल by hand. Send it as
+  soon as you know you have slipped — do not wait for the poster to finish all 8.
+- This late-run DM is separate from the failure alert below; a late run is not a failed run.
+
+### STALE-PAPER REUSE — post anyway, reframe, SAME PRICES ARE FINE
+
+**OPERATOR RULE (non-negotiable): a missing new paper NEVER means a missing post day.
+There is no situation in which the routine posts nothing because the paper is old.**
+
+There are exactly two reasons the newest available issue is one an earlier run already
+used. `fetch` flags both identically as `stale_reuse: true` + `already_used_on`:
+
+1. **Weekend or holiday — no paper was published.** Sundays never have an edition; the
+   publisher also skips the odd weekday and holiday stretches (no issue at all for
+   16–18 Aug 2026).
+2. **We are early — the paper is not up yet.** Rare at a 19:00 IST run, since the
+   cover-date-D issue lands 21:39–23:38 IST on D−1 and the run only needs the D−1
+   issue (already ~21h old). Can happen if the publisher is late.
+
+**Both cases get the SAME treatment: use the previous day's paper and post the full 8.**
+
+- **Prices repeat, and that is explicitly OK.** The rates in a reused issue are the same
+  rates. Do not treat repeated prices as "stale data", do not hedge about it in the copy,
+  and do not skip the day over it. The paper is the source of truth for prices, full stop.
+- **What MUST change is the framing and the images**, versus the run(s) named in
+  `already_used_on`:
+  - **Framing** — every dedup axis: Samachar hero, oil frame/direction, dal/shakkar pick,
+    other-commodity pick, Rujhan quiz commodity, both trending themes, the scheme. One
+    issue supports many honest framings: re-lead the oil post from a different oil in the
+    same LEAD (सोया-led मंदी one day, बिनौला/सरसों-led तेजी the next — both true), take a
+    different front-page lead as hero, promote commodities the previous run parked in the
+    स्थिर strip. Titles, hooks and PN copy must all be freshly written, not reworded.
+  - **Images** — every `image_prompt` and `pn_image_prompt` must be visibly different:
+    different commodity subject, different photo composition/angle/lighting, different
+    category pill, and the Rujhan 4-card set must show different commodities. A reader
+    scrolling two days must not see the same picture twice.
+- Do not reuse a commodity the previous run used on **any** axis, even a different one.
+- Record `pdf_used` in the ledger and start `_note` with
+  `*** STALE-PAPER REUSE (जानबूझकर, weekend rule) ***`, listing every axis you flipped.
+
+Precedents: 2026-08-16 / 2026-08-17 (both VK-15-August), 2026-08-01 / 2026-08-02
+(both VK-31-JULY), 2026-07-19 / 2026-07-20 (both VK-18).
+
+---
+
+## FAILURE ALERTS — Slack DM to Harsh, nobody else
+
+**If the run fails, tell Harsh on Slack. Direct message only — never a channel, never
+anyone else.** Target: user ID `U09K92G1U1X` (Harsh Shrivastava,
+harsh.shrivastava@kirana.club) via `slack_send_message` with `channel_id` set to that
+user ID.
+
+Alert on any of these:
+
+| Condition | How you detect it |
+|---|---|
+| No paper found at all | `fetch` returns `ok: false` (exit 2) |
+| Posts could not be drafted or validated | `validate()` keeps raising after fixes |
+| **Any item failed to publish** | `post_items.py` exits **non-zero** |
+| Ledger push to `main` failed | `git push` still failing after retries |
+| **सोया तेल not live by 08:00 IST** | clock — DM as soon as you know, mid-run |
+
+**Do NOT alert for:** a normal clean run, or a stale-paper reuse day (that is expected
+behaviour, not a failure — it goes in the run report, not a Slack DM).
+
+**Judging the poster correctly:** HTTP 200 is NOT proof a post was created. The backend
+returns 200 with `{"success": false, "data":[{"success": false, "error": ...}]}` when the
+downstream News API fails. `post_items.py` now reads the body and exits non-zero if any
+item failed — trust its exit code and its `PUBLISHED / FAILED` line, never the raw status
+codes. (On 2026-08-17 the रुझान post came back 200 with
+`News API failed: API Error: 404` and the old code reported "Success: 8, Failed: 0".)
+
+Keep the DM short and factual: posting date, what failed, the error text, what did go
+live, and whether the ledger was pushed. Do not retry the poster.
+
+### Ledger field
+
+Every ledger entry MUST carry `pdf_used` (the exact server filename, e.g.
+`VK-15-August-2026.pdf`) right after `date`. This is what lets the next run detect
+reuse automatically instead of scraping `_note`.
+
+---
+
 ## CONFIG
 
 **Region Mode:** PAN-INDIA ONLY → Cover पूरे भारत

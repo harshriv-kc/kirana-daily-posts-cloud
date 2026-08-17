@@ -50,6 +50,7 @@ def main():
 
     results = []
     success_count = 0
+    failed_items = []
     fail_count = 0
     overall_start = datetime.now()
 
@@ -80,11 +81,31 @@ def main():
                 "response": resp_data,
             })
 
-            if response.status_code == 200:
-                success_count += 1
+            # HTTP 200 is NOT proof the post was created. The backend answers 200
+            # with {"success": false, "data":[{"success": false, "error": ...}]}
+            # when the downstream News API fails (seen 2026-08-17: the रुझान post
+            # came back 200 / "News API failed: API Error: 404" and was silently
+            # counted as a success). Trust the body, not the status line.
+            item_errors = []
+            if response.status_code != 200:
+                item_errors.append(f"HTTP {response.status_code}")
             else:
+                posts = (resp_data or {}).get("data")
+                if isinstance(posts, list) and posts:
+                    for p in posts:
+                        if not p.get("success"):
+                            item_errors.append(
+                                f"{p.get('post_name') or 'post'}: "
+                                f"{p.get('error') or 'success=false'}")
+                elif (resp_data or {}).get("success") is False:
+                    item_errors.append(str((resp_data or {}).get("message") or "success=false"))
+
+            if item_errors:
                 fail_count += 1
-                log(f"WARNING: Item {i} returned non-200 status: {response.status_code}")
+                failed_items.append((i, item_errors))
+                log(f"FAILED: Item {i}/{total} did NOT publish — {'; '.join(item_errors)}")
+            else:
+                success_count += 1
 
         except requests.exceptions.Timeout:
             elapsed = (datetime.now() - start_time).total_seconds()
@@ -108,7 +129,10 @@ def main():
 
     total_elapsed = (datetime.now() - overall_start).total_seconds()
     log("=" * 60)
-    log(f"All items processed. Success: {success_count}, Failed: {fail_count}, Total time: {total_elapsed:.2f}s")
+    log(f"All items processed. PUBLISHED: {success_count}, FAILED: {fail_count}, "
+        f"Total time: {total_elapsed:.2f}s")
+    for idx, errs in failed_items:
+        log(f"  -> item {idx} FAILED: {'; '.join(errs)}")
 
     output_file = f"post_{today}.json"
     with open(output_file, "w", encoding="utf-8") as f:
@@ -116,6 +140,10 @@ def main():
     log(f"Results saved to '{output_file}'")
     log("Script completed.")
     log("=" * 60)
+    # Non-zero exit when ANY item failed to publish, so the caller can branch on it
+    # and raise the Slack alert instead of reading a misleading success line.
+    if fail_count:
+        sys.exit(2)
 
 
 if __name__ == "__main__":
