@@ -4,23 +4,21 @@
 run_kirana.py — fetch the latest available व्यापार केसरी (VK) PDF for the
 kirana daily-posts routine, and decide WHICH posting date this run is for.
 
-DATE LOGIC (no rigid run_date+1 formula — decide logically):
-  The posting date is ALWAYS the date the clock allows right now (STAY CURRENT);
-  a run is due only while there is still something owed.
+DATE LOGIC — MORNING-ONLY:
+  posting_date is ALWAYS today (IST). The routine fires at 07:00 IST on the very
+  day it posts for, so run date == posting date. There is no next-day branch and
+  no cutoff: a run that fires late (delay, retry, manual kick at 21:00) still
+  publishes TODAY, never tomorrow — publishing tomorrow's date is the retired
+  evening behaviour and would also burn the next day's slot.
+  --cutoff is still accepted but IGNORED, so old callers do not break.
 
   1. last_posted = newest `date` recorded in the dedup ledger
                    (kirana-used-log.json -> runs[].date = posting_date).
-  2. next_owed   = last_posted + 1 day   (the earliest day we still owe).
-  3. max_allowed = the furthest date this run may target, based on IST clock and
-     the --cutoff (default 18:00 IST):
-        - run fires AT/AFTER the cutoff -> max_allowed = today + 1  (next-day run)
-        - run fires BEFORE   the cutoff -> max_allowed = today      (same-day run)
-     The routine now fires at 07:00 IST ON THE POSTING DAY, which is before the
-     cutoff, so max_allowed = today and posting_date = today. Keep the cutoff
-     ABOVE 07:00 or the morning run would target tomorrow instead.
-  4. posting_date:
-        - if next_owed <= max_allowed -> posting_date = max_allowed  (stay current)
-        - else                        -> NOTHING DUE (already caught up; too early for next day)
+  2. posting_date:
+        - last_posted <  today -> posting_date = today   (post; skip any stale
+                                                          owed dates in between)
+        - last_posted >= today -> NOTHING DUE (today already published; the next
+                                 run is tomorrow 07:00 IST)
 
   Why NOT gap-fill (fixed 27-Jul-2026): backfilling the oldest owed date makes a
   single missed run permanent. The Sat 25-Jul-2026 evening run was missed, so the
@@ -30,14 +28,14 @@ DATE LOGIC (no rigid run_date+1 formula — decide logically):
   any skipped dates are reported in date_decision.skipped_owed_dates.
   To deliberately publish a missed day, run with --posting-date YYYY-MM-DD.
 
-  Catch-up still works: a missed evening run that fires after midnight (e.g. 2 AM
-  on the 28th) still produces the 28th, because before the cutoff max_allowed=today.
+  Catch-up still works: a run that fires late on the 28th (or at 2 AM, or on a
+  retry) still produces the 28th, because posting_date is simply today.
 
-  Examples (cutoff 6:00 PM IST):
-    - 28th 02:00, ledger last=27th -> next_owed=28, max=28 -> post 28  (catch-up for today)
-    - 28th 19:30, ledger last=28th -> next_owed=29, max=29 -> post 29  (normal evening)
-    - 28th 19:30, ledger last=26th -> next_owed=27, max=29 -> post 29  (skip stale 27; stay current)
-    - 28th 14:00, ledger last=28th -> next_owed=29, max=28 -> NOTHING DUE (too early for 29)
+  Examples (morning-only):
+    - 28th 07:00, ledger last=27th -> post 28  (normal morning run)
+    - 28th 07:00, ledger last=25th -> post 28  (skip stale 26,27; stay current)
+    - 28th 21:00, ledger last=27th -> post 28  (late run STILL posts today, not 29)
+    - 28th 07:00, ledger last=28th -> NOTHING DUE (today already published)
 
 LATEST-PAPER RULE: PDF used = the newest VK paper published by run time, searched
 backwards from the POSTING DATE ITSELF (not posting_date - 1). Whatever the clock
@@ -203,40 +201,48 @@ def _parse_cutoff(s):
     return dtime(int(hh), int(mm))
 
 
-def decide_posting_date(now_ist, cutoff, last_posted):
-    """Return (posting_date_or_None, decision_dict). None => nothing due yet."""
+def decide_posting_date(now_ist, cutoff=None, last_posted=None):
+    """Return (posting_date_or_None, decision_dict). None => nothing due yet.
+
+    MORNING-ONLY: the posting date is ALWAYS today (IST). The routine fires at
+    07:00 IST on the day it is posting for, so run date == posting date, full
+    stop. There is no next-day branch and no cutoff any more: a run that fires
+    late (delay, retry, manual kick at 21:00) must still publish TODAY, never
+    tomorrow. Publishing tomorrow's date is the retired evening behaviour and
+    would also burn the next day's slot.
+
+    `cutoff` is accepted and ignored; it only exists so older callers passing
+    --cutoff do not break.
+    """
     today = now_ist.date()
-    after_cutoff = now_ist.time() >= cutoff
-    max_allowed = today + timedelta(days=1) if after_cutoff else today
 
     if last_posted is None:
-        # No history: just post the time-appropriate date (no gap to fill).
-        posting = max_allowed
-        reason = "no ledger history -> post the time-appropriate date"
+        # No history: post today.
+        posting = today
+        reason = "no ledger history -> post today (morning-only)"
+    elif last_posted < today:
+        # STAY CURRENT: a missed run leaves a stale owed date behind. Backfilling
+        # it publishes yesterday's date today and keeps the routine one day behind
+        # forever, so skip the stale date(s) and post today.
+        # (To deliberately publish a missed day, use --posting-date.)
+        posting = today
+        reason = ("skipped stale owed date(s) to stay current"
+                  if last_posted < today - timedelta(days=1)
+                  else "normal morning run")
     else:
-        next_owed = last_posted + timedelta(days=1)
-        if next_owed <= max_allowed:
-            # STAY CURRENT: never target a date older than the time-appropriate
-            # one. A missed run leaves a stale owed date behind; backfilling it
-            # publishes yesterday's date today and keeps the routine exactly one
-            # day behind forever. Skip the stale date(s) instead.
-            # (To deliberately publish a missed day, use --posting-date.)
-            posting = max_allowed
-            reason = ("skipped stale owed date(s) to stay current"
-                      if next_owed < max_allowed else "normal next-day/same-day run")
-        else:
-            posting = None
-            reason = ("already caught up; next owed date is beyond what the "
-                      "current time allows (before 7:30 PM = same day only)")
+        # last_posted >= today: today is already published.
+        posting = None
+        reason = ("already posted for today; morning-only routine never targets "
+                  "tomorrow, so nothing is due until tomorrow 07:00 IST")
 
     decision = {
         "now_ist": now_ist.isoformat(timespec="seconds"),
-        "cutoff_ist": cutoff.strftime("%H:%M"),
-        "after_cutoff": after_cutoff,
+        "mode": "morning-only (posting_date is always today IST)",
         "today_ist": today.isoformat(),
-        "max_allowed": max_allowed.isoformat(),
+        "max_allowed": today.isoformat(),
         "last_posted": last_posted.isoformat() if last_posted else None,
         "next_owed": (last_posted + timedelta(days=1)).isoformat() if last_posted else None,
+        "last_posted_is_today": bool(last_posted and last_posted >= now_ist.date()),
         "posting_date": posting.isoformat() if posting else None,
         "reason": reason,
     }

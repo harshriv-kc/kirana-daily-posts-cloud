@@ -59,12 +59,18 @@ hour.** Budget from the 2026-08-17 run: fetch ~1 min, PDF render + vision read ~
 web research ~5 min, drafting + QA ~15 min, validation ~1 min, poster ~17 min total with
 सोया तेल created ~5 min in. That fits inside the hour, but not by much.
 
-- Work briskly and do not gold-plate. If you are running late, cut research breadth
-  (TN1/TN2/scheme) before you cut commodity accuracy — prices are never rushed.
-- **If सोया तेल is not created by 08:00 IST, DM Harsh immediately** (`U09K92G1U1X`) with
-  the actual timestamp, so he can change the visible time for सोया तेल by hand. Send it as
-  soon as you know you have slipped — do not wait for the poster to finish all 8.
-- This late-run DM is separate from the failure alert below; a late run is not a failed run.
+**NEVER trade quality for speed.** Do not thin the research, shorten the Samachar sweep,
+skip QA, or rush the prices to beat the clock. The posts go out at full quality every day.
+Work briskly and do not gold-plate, but if the choice is late-but-right versus on-time-but-
+worse, **be late**. A late post is a five-second fix for Harsh; a wrong price is not.
+
+- **सोया तेल posts FIRST** — it is item 1 in `request_body.json`, so it clears the 08:00
+  slot within a few minutes of the poster starting, even if the remaining 7 run long.
+- **If सोया तेल is not live by 08:00 IST, DM Harsh immediately** (`U09K92G1U1X`) with the
+  actual timestamp, so he can change the visible time for सोया तेल by hand. Send it the
+  moment you know you have slipped — do not wait for the poster to finish all 8.
+- This late-run DM is separate from the failure alert below; **a late run is not a failed
+  run**, it just needs the visible time nudged.
 
 ### STALE-PAPER REUSE — post anyway, reframe, SAME PRICES ARE FINE
 

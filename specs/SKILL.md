@@ -133,10 +133,21 @@ reuse day is NOT a failure and gets no DM. See `kirana-posts-content.md` → "FA
   shell payload). All Hindi sentences end with `।`. No duplicate emoji within a single PN. The
   Samachar PN commodity must differ from the four commodity-post PNs.
 
-## Post names (exact values)
+## Post names (exact values) — and the ORDER they must be written in
 
-`Samachar`, `सोया तेल`, `दाल/शक्कर`, `Other commodities`, `रुझान`,
-`Pan India Trending News 1`, `Pan India Trending News 2`, `Pan India Schemes`.
+**`सोया तेल` MUST be the first object in the array.** It is the first post users see
+(08:00 IST), and the poster sends items in array order, so putting it first means it
+clears the 8 AM slot a few minutes into the run even if the rest run long. Write the 8
+in exactly this order:
+
+1. `सोया तेल`  ← first, deadline-critical
+2. `Samachar`
+3. `दाल/शक्कर`
+4. `Other commodities`
+5. `रुझान`
+6. `Pan India Trending News 1`
+7. `Pan India Trending News 2`
+8. `Pan India Schemes`
 
 Read `references/field-rules.md` before drafting — it holds the detailed per-post templates,
 colour table, PN patterns, and the Rujhan pn_image VAR rotation (date mod 4).

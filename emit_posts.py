@@ -68,6 +68,13 @@ def validate(posts, date_prefix):
     if len(posts) != 8:
         errs.append(f"Expected 8 posts, got {len(posts)}")
 
+    # सोया तेल is the first user-visible post (08:00 IST deadline) and the poster
+    # sends items in array order, so it must lead the payload — that way it clears
+    # 8 AM a few minutes in, even if the remaining 7 run long.
+    if posts and posts[0].get("post_name") != "सोया तेल":
+        errs.append(f"post 1 must be 'सोया तेल' (08:00 deadline), got "
+                    f"{posts[0].get('post_name')!r}")
+
     bgs = [p.get("bg_color") for p in posts]
     if len(set(bgs)) != len(bgs):
         errs.append(f"bg_color values not unique: {bgs}")
