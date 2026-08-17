@@ -68,6 +68,18 @@ posting date). So a paper dated 17 जून → posts for **18 जून**. Con
 Every `post_title` and heading uses the posting date in Hindi format with Arabic numerals:
 `18 जून:` (never Devanagari digits, never the event date).
 
+**This is the n+1 case, not a law.** The governing rule is the **latest-paper rule**: always
+draft from the newest issue published at run time, whatever its cover date — `run_kirana.py
+fetch` picks it and reports `pdf_used` / `gap_days` / `stale_reuse`. A run firing on the
+morning of the posting date will legitimately get `gap_days: 0` (cover date == posting date,
+one day fresher); a run after a Sunday or a publisher skip will get `gap_days: 2+`. In every
+case the posting date comes from `fetch`, never from the paper's own cover or डाक date.
+
+**If `stale_reuse` is true** (the newest issue already produced an earlier run — unavoidable
+because Sundays have no edition): **post the full 8 anyway** and change every dedup axis.
+Never skip the day for this reason. Full rule + precedents: `kirana-posts-content.md` →
+"WHICH PAPER TO USE — THE LATEST-PAPER RULE".
+
 ## Workflow
 
 1. **Read the VK PDF** (in `/mnt/user-data/uploads/`). It is in context as an image/PDF — decode

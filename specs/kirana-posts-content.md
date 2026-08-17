@@ -10,6 +10,62 @@ You will not call the API directly. Instead, you will output one complete cURL, 
 
 ---
 
+## WHICH PAPER TO USE — THE LATEST-PAPER RULE (read first)
+
+**Always draft from the newest VK issue published at run time.** `run_kirana.py fetch`
+enforces this: it searches backwards starting AT the posting date (not the day before)
+and returns the first issue it finds, reporting `pdf_used`, `pdf_date_used`, `gap_days`,
+`stale_reuse` and `already_used_on`. Use whatever it hands you — never hand-pick an
+older issue, and never skip a day because the newest issue is not as fresh as you hoped.
+
+### When the paper gets published
+
+Measured from `Last-Modified` across 26 issues (Jul–Aug 2026): **the paper cover-dated D
+goes live between 21:39 and 23:38 IST on day D−1, median ~22:20 IST.**
+
+- **Sunday editions never exist.** The publisher also skips the occasional weekday
+  (e.g. 2026-07-29 Wed, 2026-08-01 Sat) and holiday stretches (no issue for 16–18 Aug 2026).
+- A Monday edition is uploaded on **Saturday** night, ~25h before its cover date.
+
+Consequences by run time, for posting date P:
+
+| Run fires | Newest issue on server | `gap_days` | Rate freshness |
+|---|---|---|---|
+| Evening of P−1 (~19:06 IST) | cover-dated P−1 (the P issue lands ~3h later) | 1 | dateline P−2 |
+| Morning of P (07:00–08:00 IST) | cover-dated P | 0 | dateline P−1 — one day fresher |
+
+### STALE-PAPER REUSE (weekend rule) — post anyway, change every axis
+
+Because Sundays have no edition, the newest available issue is sometimes **the same one
+a previous run already used**. `fetch` flags this as `stale_reuse: true` with
+`already_used_on`. This is **NOT an error and NOT a reason to post nothing** — the
+weekend rule is that a Fri/Sat paper is legitimately used for Sun/Mon.
+
+When `stale_reuse` is true:
+
+1. **Post the full 8 as normal.** Do not stop, do not report "no fresh paper".
+2. **Deliberately change EVERY dedup axis** versus the run(s) that already used this
+   issue — Samachar hero, oil frame/direction, dal/shakkar pick, other-commodity pick,
+   Rujhan quiz commodity, both trending themes, and the scheme. The same paper supports
+   many different framings: re-lead the oil post from a different oil (e.g. सोया-led
+   मंदी one day, बिनौला/सरसों-led तेजी the next — both true, both in the same LEAD),
+   pick a different hero from the front-page leads, rotate to commodities the previous
+   run left in the स्थिर strip.
+3. Do not reuse a commodity the previous run used on **any** axis, even a different one.
+4. Record `pdf_used` in the ledger and start `_note` with
+   `*** STALE-PAPER REUSE (जानबूझकर, weekend rule) ***`, listing every axis you flipped.
+
+Precedents: 2026-08-16 / 2026-08-17 (both VK-15-August), 2026-08-01 / 2026-08-02
+(both VK-31-JULY), 2026-07-19 / 2026-07-20 (both VK-18).
+
+### Ledger field
+
+Every ledger entry MUST carry `pdf_used` (the exact server filename, e.g.
+`VK-15-August-2026.pdf`) right after `date`. This is what lets the next run detect
+reuse automatically instead of scraping `_note`.
+
+---
+
 ## CONFIG
 
 **Region Mode:** PAN-INDIA ONLY → Cover पूरे भारत
