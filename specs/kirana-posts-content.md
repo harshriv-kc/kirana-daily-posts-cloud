@@ -31,8 +31,40 @@ Consequences by run time, for posting date P:
 
 | Run fires | Newest issue on server | `gap_days` | Rate freshness |
 |---|---|---|---|
-| Evening of P−1 (~19:06 IST) | cover-dated P−1 (the P issue lands ~3h later) | 1 | dateline P−2 |
-| Morning of P (07:00–08:00 IST) | cover-dated P | 0 | dateline P−1 — one day fresher |
+| **07:00 IST on P — CURRENT SCHEDULE** | cover-dated P | **0** | dateline P−1 |
+| Evening of P−1 (~19:06 IST — RETIRED) | cover-dated P−1 (the P issue lands ~3h later) | 1 | dateline P−2 |
+
+### Schedule: 07:00 IST on the posting day. Morning only.
+
+**The routine runs at 07:00 IST on day P and there is NO evening run.** The old
+~19:06 IST evening slot is retired — do not post in the evening for the next day.
+
+At 07:00 the cover-date-P issue is ~8h old (uploaded 21:39–23:38 the previous night),
+leaving **5.9h of margin** against the latest observed upload. Measured hit rate:
+**25/26 days (96%)** get the same-day issue; the other day falls back to P−1, which is
+just the old behaviour and is covered by the reuse rule below.
+
+This also kills the weekly Sunday duplicate: a Monday edition is uploaded on **Saturday**
+night, so the Monday 07:00 run finds a real Monday paper — whereas the retired
+Sunday-evening run asked for a Sunday edition that never exists and used Saturday's paper
+a second time.
+
+`run_kirana.py`'s 18:00 IST cutoff must stay **above** the run time so 07:00 counts as a
+same-day run (`max_allowed = today`) and targets P. Do not lower it below 07:00.
+
+### ⏱ THE 08:00 DEADLINE — सोया तेल must be live by 8 AM
+
+**The first post visible to users is सोया तेल at 08:00 IST, so the whole pipeline has one
+hour.** Budget from the 2026-08-17 run: fetch ~1 min, PDF render + vision read ~10 min,
+web research ~5 min, drafting + QA ~15 min, validation ~1 min, poster ~17 min total with
+सोया तेल created ~5 min in. That fits inside the hour, but not by much.
+
+- Work briskly and do not gold-plate. If you are running late, cut research breadth
+  (TN1/TN2/scheme) before you cut commodity accuracy — prices are never rushed.
+- **If सोया तेल is not created by 08:00 IST, DM Harsh immediately** (`U09K92G1U1X`) with
+  the actual timestamp, so he can change the visible time for सोया तेल by hand. Send it as
+  soon as you know you have slipped — do not wait for the poster to finish all 8.
+- This late-run DM is separate from the failure alert below; a late run is not a failed run.
 
 ### STALE-PAPER REUSE — post anyway, reframe, SAME PRICES ARE FINE
 
@@ -90,6 +122,7 @@ Alert on any of these:
 | Posts could not be drafted or validated | `validate()` keeps raising after fixes |
 | **Any item failed to publish** | `post_items.py` exits **non-zero** |
 | Ledger push to `main` failed | `git push` still failing after retries |
+| **सोया तेल not live by 08:00 IST** | clock — DM as soon as you know, mid-run |
 
 **Do NOT alert for:** a normal clean run, or a stale-paper reuse day (that is expected
 behaviour, not a failure — it goes in the run report, not a Slack DM).

@@ -11,9 +11,13 @@ DATE LOGIC (no rigid run_date+1 formula — decide logically):
   1. last_posted = newest `date` recorded in the dedup ledger
                    (kirana-used-log.json -> runs[].date = posting_date).
   2. next_owed   = last_posted + 1 day   (the earliest day we still owe).
-  3. max_allowed = the furthest date this run may target, based on IST clock:
-        - run fires AT/AFTER 7:30 PM IST  -> max_allowed = today + 1  (evening = next-day run)
-        - run fires BEFORE   7:30 PM IST  -> max_allowed = today      (same-day run / catch-up)
+  3. max_allowed = the furthest date this run may target, based on IST clock and
+     the --cutoff (default 18:00 IST):
+        - run fires AT/AFTER the cutoff -> max_allowed = today + 1  (next-day run)
+        - run fires BEFORE   the cutoff -> max_allowed = today      (same-day run)
+     The routine now fires at 07:00 IST ON THE POSTING DAY, which is before the
+     cutoff, so max_allowed = today and posting_date = today. Keep the cutoff
+     ABOVE 07:00 or the morning run would target tomorrow instead.
   4. posting_date:
         - if next_owed <= max_allowed -> posting_date = max_allowed  (stay current)
         - else                        -> NOTHING DUE (already caught up; too early for next day)
@@ -43,10 +47,16 @@ says, the run always drafts from the freshest issue on the server.
   paper cover-dated D goes live between 21:39 and 23:38 IST on D-1, median ~22:20.
   Sunday editions are never published; the publisher also skips the odd weekday.
 
-  -> evening run (~19:06 IST on D-1): the cover-date-D paper is not up yet (it
-     lands ~3h later), so the search falls through to D-1. gap_days == 1.
-  -> morning run (on day D): the cover-date-D paper is ~9h old and is taken
-     straight away. gap_days == 0 — one full day fresher than the evening run.
+  -> CURRENT SCHEDULE, 07:00 IST on day D: the cover-date-D paper is ~8h old and
+     is taken straight away. gap_days == 0. Hit rate 25/26 days (96%), with 5.9h
+     of margin against the latest observed upload. MORNING ONLY - the old ~19:06
+     IST evening run is RETIRED.
+  -> the retired evening run (~19:06 on D-1) could only ever see the D-1 paper,
+     because the cover-date-D issue lands ~3h after it. gap_days == 1.
+
+  The first user-visible post (सोया तेल) must be live by 08:00 IST, i.e. the whole
+  pipeline has one hour. If it slips past 08:00, DM Harsh (U09K92G1U1X) at once so
+  he can adjust the visible time by hand.
 
 gap_days = posting_date - pdf_date_used. weekend_fallback = gap_days > 1.
 
@@ -266,10 +276,10 @@ def cmd_fetch(args):
     # fresher paper instead of yesterday's. Upload window (measured over 26 issues,
     # Jul-Aug 2026 Last-Modified headers): the paper cover-dated D goes live between
     # 21:39 and 23:38 IST on D-1, median ~22:20. So:
-    #   - evening run (~19:06 IST on D-1) -> cover-date-D paper is NOT up yet
-    #     (lands ~3h later); search falls through to D-1. gap_days == 1.
-    #   - morning run (on day D)          -> cover-date-D paper IS up (~9h old);
-    #     search hits it immediately. gap_days == 0, one day fresher.
+    #   - CURRENT: 07:00 IST on day D -> cover-date-D paper IS up (~8h old); the
+    #     search hits it immediately. gap_days == 0. 96% of days.
+    #   - RETIRED evening slot (~19:06 on D-1) -> cover-date-D paper NOT up yet
+    #     (lands ~3h later); search fell through to D-1. gap_days == 1.
     # Sunday editions never exist, so a Monday posting date legitimately falls back.
     start = posting
     attempts = []
@@ -324,7 +334,7 @@ def main():
     pf.add_argument("--max-back", type=int, default=4,
                     help="how many days back to search for a paper (default 4, covers weekends)")
     pf.add_argument("--cutoff", default="18:00",
-                    help="IST cutoff HH:MM; at/after = next-day run, before = same-day run (default 18:00; the cloud routine fires ~7:06 PM so this must be below that)")
+                    help="IST cutoff HH:MM; at/after = next-day run, before = same-day run (default 18:00). The routine now fires 07:00 IST on the POSTING DAY, so the cutoff must stay ABOVE 07:00 for that to count as a same-day run. Do not lower it below 07:00.")
     pf.add_argument("--ledger", default=DEFAULT_LEDGER,
                     help="path to the dedup ledger that records posted dates")
     pf.set_defaults(func=cmd_fetch)
