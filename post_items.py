@@ -40,10 +40,26 @@ INPUT_FILE = "request_body.json"
 #   (b) make the endpoint async: 202 + job_id immediately, work in the
 #       background, add a GET status route the poster polls. Removes the
 #       long-lived connection entirely.
-# Until one of those ships, leave this at 0.
-CONNECTION_RETRIES = 0          # 0 = never blind-retry a lost response
-RETRY_BACKOFF_SECONDS = 15      # only used if a future idempotency_key makes
-                                # retries safe; doubles per attempt
+# Until one of those ships, leave BACKEND_SUPPORTS_IDEMPOTENCY False.
+#
+# ── Turning retries back on ────────────────────────────────────────────────────
+# We already send an idempotency_key with every post (harmless while the backend
+# ignores it). The DAY postAutomation honours it — see
+# docs/postautomation-idempotency-patch.md — flip the flag below to True. A replay
+# then returns the ORIGINAL post instead of creating a second one, so retrying a
+# lost response becomes safe, and a >300s post finally publishes reliably: we just
+# keep asking until we get a receipt.
+# Do NOT flip this on hope. Confirm with one real duplicate-send test first.
+BACKEND_SUPPORTS_IDEMPOTENCY = False
+
+CONNECTION_RETRIES = 4 if BACKEND_SUPPORTS_IDEMPOTENCY else 0
+RETRY_BACKOFF_SECONDS = 15      # doubles per attempt: 15s, 30s, 60s, 120s
+
+
+def idempotency_key(item, run_date):
+    """Stable per (posting day, post) so every retry of the same run replays
+    instead of duplicating, while tomorrow's run is always a fresh key."""
+    return f"{run_date}:{item.get('post_name', '')}"
 
 
 def ts():
@@ -104,11 +120,17 @@ def main():
             start_time = datetime.now()
 
             try:
+                # Sent on every attempt, including the first. Once the backend
+                # honours it, a replay returns the original post instead of
+                # creating a second one. Ignored harmlessly until then.
+                payload = dict(item)
+                payload["idempotency_key"] = idempotency_key(item, today)
+
                 response = requests.post(
                     API_URL,
                     headers={"Content-Type": "application/json"},
-                    json=[item],  # Send as single-item list to match original format
-                    timeout=600,  # 10 minutes
+                    json=[payload],  # single-item list to match original format
+                    timeout=600,     # 10 minutes
                 )
 
                 elapsed = (datetime.now() - start_time).total_seconds()
@@ -189,11 +211,13 @@ def main():
                 log(traceback.format_exc())
 
                 if attempt <= CONNECTION_RETRIES:
+                    # Only reachable with BACKEND_SUPPORTS_IDEMPOTENCY on, so a
+                    # replay returns the original post rather than a duplicate.
                     wait = RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
-                    log(f"WARNING: Item {i}/{total} lost its response in transit — the "
-                        f"backend MAY have created this post already. Retrying in "
-                        f"{wait}s ({CONNECTION_RETRIES - attempt + 1} left); check for "
-                        f"DUPLICATES if it publishes.")
+                    log(f"Item {i}/{total} lost its response in transit. Retrying in "
+                        f"{wait}s ({CONNECTION_RETRIES - attempt + 1} left) — safe, "
+                        f"idempotency_key {idempotency_key(item, today)!r} replays "
+                        f"the original post instead of creating a second one.")
                     time.sleep(wait)
                     continue
 

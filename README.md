@@ -10,6 +10,8 @@ run_kirana.py              fetch newest VK PDF + decide posting_date (reads the 
 post_items.py              the poster — POSTs request_body.json items to postAutomation
 emit_posts.py              validate() the 8-post array before posting
 kirana-used-log.json       ⭐ THE LEDGER — dedup + posting-date state (source of truth)
+docs/postautomation-idempotency-patch.md   backend change we need so >300s posts
+                           can be retried safely (hand to whoever owns postAutomation)
 specs/                     drafting rules the routine reads each run
   SKILL.md                 operational checklist
   kirana-posts-content.md  config, content buckets, sources, §4 trending pool

@@ -150,8 +150,34 @@ a second push notification at every user. On 2026-08-18 three items were reporte
 as "failed", re-sent on that basis, and went out twice with duplicate PNs.
 
 An UNVERIFIED item is **not** a missing post and is **not** a reason to re-run the
-poster. It is a reason to ask a human to check `news_generation_logs` / the D2R
-panel. Only a human who has confirmed the post is genuinely absent may re-send it.
+poster. Only a human who has confirmed the post is genuinely absent may re-send it.
+
+### Verifying an UNVERIFIED item (do this before reporting)
+
+If the run ends with any UNVERIFIED item, **resolve it yourself instead of guessing**,
+using the Birbal MCP tools that are available in the routine session:
+
+```sql
+SELECT id, timestamp, success, LEFT(message, 80) AS message,
+       JSON_UNQUOTE(JSON_EXTRACT(request_data, '$[0].post_name')) AS post_name,
+       JSON_UNQUOTE(JSON_EXTRACT(news_api_response,
+                    '$.data.results.news.id'))                    AS post_id
+FROM news_generation_logs
+WHERE DATE(timestamp) = '<posting_date>'
+ORDER BY id;
+```
+
+- A row with `success = 1` for that `post_name` → **it published.** Report it as
+  PUBLISHED, quote the `post_id`, and do NOT re-send.
+- No row, or only `success = 0` rows → it genuinely did not publish. Say so, and
+  still leave the re-send decision to Harsh.
+- Two `success = 1` rows for the same `post_name` → **a duplicate is live.** Flag it
+  loudly with both `post_id`s so one can be deleted.
+
+If the query is refused (`Table 'news_generation_logs' is not queryable`), say so in
+the report and ask for it to be added to the Birbal allowlist — the routine cannot
+verify anything without it, and unverifiable is the state that caused the 2026-08-18
+duplicate incident.
 
 **Do NOT alert for:** a normal clean run, or a stale-paper reuse day (that is expected
 behaviour, not a failure — it goes in the run report, not a Slack DM).
