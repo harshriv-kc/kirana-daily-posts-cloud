@@ -10,21 +10,40 @@ import traceback
 API_URL = "https://asia-south1-op-d2r.cloudfunctions.net/postAutomation"
 INPUT_FILE = "request_body.json"
 
-# The cloud runner's egress proxy closes an idle tunnel at ~300s, while the
-# backend legitimately takes 120-300s per item (it generates 1-2 images). When
-# it overruns, requests raises ConnectionError/ProxyError — NOT Timeout, so the
-# `timeout=` below is irrelevant to that failure and raising it does nothing.
-# Observed 2026-08-18: items answering in 118-253s all published; three that
-# crossed 300s were cut (300.53s, 300.43s, 300.62s) and published fine on a
-# manual re-send at 273s, 182s and 165s. Retrying is the only lever.
+# WHY A LOST CONNECTION IS *NOT* A FAILED POST — read before "fixing" this.
 #
-# CAUTION: a dropped connection means the response was LOST, not refused — the
-# backend may already have created the post, so a retry can produce a DUPLICATE.
-# That is why this is capped low and every retry is logged loudly. Transport
-# failures only: a 200 carrying success=false is a real rejection and is never
-# retried here.
-CONNECTION_RETRIES = 2          # extra attempts after the first
-RETRY_BACKOFF_SECONDS = 15      # doubles each attempt: 15s, 30s
+# postAutomation (Hogwarts-CloudSpells/UTILITY/postAutomation) does everything
+# synchronously inside one HTTP request: generate 1-2 Gemini images, build the
+# notification, POST to the News API (step 4), write the success row to
+# news_generation_logs (step 5), THEN answer us. It averages ~14.8 min and is
+# provisioned for long runs.
+#
+# Something in the network path cuts the connection at ~300s (2026-08-18: three
+# items died at 300.53s / 300.43s / 300.62s). Our timeout below is 600s and never
+# fired — the far end hung up, which surfaces as ConnectionError, not Timeout.
+# So RAISING THE TIMEOUT DOES NOTHING. That is not the bug.
+#
+# The important part: Cloud Functions does not abort when the caller disconnects.
+# The function keeps running and, if it gets past step 4, the post IS CREATED and
+# logged — we simply never see the receipt. A dropped connection therefore means
+# "outcome unknown", NOT "did not publish".
+#
+# Hence: NEVER auto-retry a dropped connection. If the post was already created,
+# a retry publishes a SECOND copy to the live feed. There is no client-side way
+# to tell the two cases apart today, so we report the item as UNVERIFIED, exit
+# non-zero, and let a human check before anything is re-sent.
+#
+# The real fix is server-side and is one of:
+#   (a) accept an idempotency_key per post, look it up in news_generation_logs,
+#       and return the existing post_id instead of creating a duplicate — this
+#       makes retries safe and is the smaller change; or
+#   (b) make the endpoint async: 202 + job_id immediately, work in the
+#       background, add a GET status route the poster polls. Removes the
+#       long-lived connection entirely.
+# Until one of those ships, leave this at 0.
+CONNECTION_RETRIES = 0          # 0 = never blind-retry a lost response
+RETRY_BACKOFF_SECONDS = 15      # only used if a future idempotency_key makes
+                                # retries safe; doubles per attempt
 
 
 def ts():
@@ -69,6 +88,8 @@ def main():
     success_count = 0
     failed_items = []
     fail_count = 0
+    unverified_items = []
+    unverified_count = 0
     overall_start = datetime.now()
 
     for i, item in enumerate(request_body, start=1):
@@ -155,14 +176,22 @@ def main():
                     time.sleep(wait)
                     continue
 
-                log(f"FAILED: Item {i}/{total} did NOT publish — {kind} after "
-                    f"{attempt} attempt(s)")
+                # Outcome unknown — see the note at the top of this file. The
+                # backend very likely finished and created the post; we just lost
+                # the receipt. Do NOT describe this as "did not publish" and do
+                # NOT re-send it blindly, or the feed gets a duplicate.
+                log(f"UNVERIFIED: Item {i}/{total} — {kind} after {elapsed:.2f}s. "
+                    f"The backend keeps running after we disconnect, so this post "
+                    f"MAY BE LIVE. Check news_generation_logs / the D2R panel "
+                    f"BEFORE re-sending it.")
                 results.append({"item_index": i,
+                                "outcome": "unverified",
                                 "error": "timeout" if kind == "TIMEOUT" else str(e),
                                 "attempts": attempt,
                                 "elapsed_seconds": round(elapsed, 2)})
-                fail_count += 1
-                failed_items.append((i, [f"{kind} after {attempt} attempt(s)"]))
+                unverified_count += 1
+                unverified_items.append(
+                    (i, item.get("post_name"), f"{kind} after {elapsed:.0f}s"))
                 break
 
             except Exception as e:
@@ -177,9 +206,12 @@ def main():
     total_elapsed = (datetime.now() - overall_start).total_seconds()
     log("=" * 60)
     log(f"All items processed. PUBLISHED: {success_count}, FAILED: {fail_count}, "
-        f"Total time: {total_elapsed:.2f}s")
+        f"UNVERIFIED: {unverified_count}, Total time: {total_elapsed:.2f}s")
     for idx, errs in failed_items:
         log(f"  -> item {idx} FAILED: {'; '.join(errs)}")
+    for idx, name, why in unverified_items:
+        log(f"  -> item {idx} UNVERIFIED ({name}): {why} — may already be live, "
+            f"VERIFY before re-sending")
 
     output_file = f"post_{today}.json"
     with open(output_file, "w", encoding="utf-8") as f:
@@ -189,7 +221,10 @@ def main():
     log("=" * 60)
     # Non-zero exit when ANY item failed to publish, so the caller can branch on it
     # and raise the Slack alert instead of reading a misleading success line.
-    if fail_count:
+    # Both states need a human, but they mean different things: FAILED is a real
+    # rejection and is safe to re-send; UNVERIFIED must be checked first or the
+    # re-send duplicates a post that is already live.
+    if fail_count or unverified_count:
         sys.exit(2)
 
 
