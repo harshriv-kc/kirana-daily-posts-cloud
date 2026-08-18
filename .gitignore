@@ -6,3 +6,4 @@ post_*.log
 __pycache__/
 *.pyc
 build_posts.py
+poster_*.out
