@@ -133,7 +133,15 @@ def main():
                 # when the downstream News API fails (seen 2026-08-17: the रुझान post
                 # came back 200 / "News API failed: API Error: 404" and was silently
                 # counted as a success). Trust the body, not the status line.
+                # ...and even a success=false body is not always a clean rejection.
+                # postAutomation calls the News API itself; if THAT call loses its
+                # response, the error it reports back carries no status/statusText
+                # and reads "API Error: undefined - undefined: undefined". The News
+                # API may still have created the post and scheduled its push
+                # notification. Seen 2026-08-18 on दाल/शक्कर: reported failed, re-sent,
+                # and users got a duplicate PN. Treat that signature as UNVERIFIED.
                 item_errors = []
+                lost_downstream = False
                 if response.status_code != 200:
                     item_errors.append(f"HTTP {response.status_code}")
                 else:
@@ -147,7 +155,20 @@ def main():
                     elif (resp_data or {}).get("success") is False:
                         item_errors.append(str((resp_data or {}).get("message") or "success=false"))
 
-                if item_errors:
+                lost_downstream = any(
+                    "undefined - undefined" in e or "API Error: undefined" in e
+                    for e in item_errors)
+
+                if item_errors and lost_downstream:
+                    log(f"UNVERIFIED: Item {i}/{total} — {'; '.join(item_errors)}. "
+                        f"That error carries no HTTP status, so the News API never "
+                        f"answered postAutomation and MAY still have created this "
+                        f"post and sent its PN. Check before re-sending.")
+                    results[-1]["outcome"] = "unverified"
+                    unverified_count += 1
+                    unverified_items.append(
+                        (i, item.get("post_name"), "News API gave no response"))
+                elif item_errors:
                     fail_count += 1
                     failed_items.append((i, item_errors))
                     log(f"FAILED: Item {i}/{total} did NOT publish — {'; '.join(item_errors)}")
