@@ -92,6 +92,15 @@ rule + precedents: `kirana-posts-content.md` → "WHICH PAPER TO USE — THE LAT
 ledger push fails): **Slack DM Harsh — `U09K92G1U1X` — and nobody else.** A stale-paper
 reuse day is NOT a failure and gets no DM. See `kirana-posts-content.md` → "FAILURE ALERTS".
 
+**⛔ Never re-send an UNVERIFIED item.** `post_items.py` reports three outcomes:
+PUBLISHED, FAILED (backend rejected it — safe to re-send) and UNVERIFIED (connection
+died before the reply arrived). `postAutomation` keeps running after we disconnect, so
+an UNVERIFIED post is **probably already live with its push notification delivered**.
+Re-sending it duplicates the post AND fires a second PN at every user — this happened
+on 2026-08-18 because the run called them "failed". Report the three buckets separately
+and leave UNVERIFIED items for a human to check. Full rule: `kirana-posts-content.md`
+→ "FAILED vs UNVERIFIED".
+
 ## Workflow
 
 1. **Read the VK PDF** (in `/mnt/user-data/uploads/`). It is in context as an image/PDF — decode

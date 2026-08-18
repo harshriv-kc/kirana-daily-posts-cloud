@@ -35,7 +35,14 @@ the end of every run**, or the next day loses its memory and posts repeat.
 6. Draft all 8 posts per `specs/` (read them first)
 7. Write `request_body.json`; validate via `emit_posts.validate`
 8. Append today's run to `kirana-used-log.json`
-9. `python post_items.py` (poster — final action)
+9. `python post_items.py` (poster — final action). It reports each item as
+   **PUBLISHED / FAILED / UNVERIFIED**. `FAILED` = backend rejected it, post does
+   not exist, safe to re-send. `UNVERIFIED` = the connection died before the reply
+   arrived; `postAutomation` keeps running after we disconnect, so the post is
+   **probably live with its PN already sent** — ⛔ never re-send it, have a human
+   check `news_generation_logs` / the D2R panel first (2026-08-18: three
+   `UNVERIFIED` items were re-sent as if failed and went out twice, with duplicate
+   push notifications).
 10. `git add kirana-used-log.json && git commit && git push` (persist the ledger)
 
 ## Deps

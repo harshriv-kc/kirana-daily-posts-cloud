@@ -126,9 +126,32 @@ Alert on any of these:
 |---|---|
 | No paper found at all | `fetch` returns `ok: false` (exit 2) |
 | Posts could not be drafted or validated | `validate()` keeps raising after fixes |
-| **Any item failed to publish** | `post_items.py` exits **non-zero** |
+| **Any item FAILED to publish** | `post_items.py` prints `FAILED:` for it |
+| **Any item is UNVERIFIED** | `post_items.py` prints `UNVERIFIED:` for it |
 | Ledger push to `main` failed | `git push` still failing after retries |
 | **सोया तेल not live by 08:00 IST** | clock — DM as soon as you know, mid-run |
+
+### ⛔ FAILED vs UNVERIFIED — never blur these two
+
+`post_items.py` exits non-zero for both, but they mean opposite things and calling
+one the other is what caused the 2026-08-18 duplicate incident. Read the log line,
+not just the exit code.
+
+- **`FAILED:`** — the backend answered and rejected it (a 200 carrying
+  `success:false`, e.g. `News API failed`). The post does **not** exist.
+  **Safe to re-send.**
+- **`UNVERIFIED:`** — the connection died before the reply reached us (the ~300s
+  cut). `postAutomation` keeps running after we disconnect, so **the post is
+  probably LIVE** — created, with its push notification already sent to real
+  users. We just never got the receipt or the post id.
+
+**NEVER re-send an UNVERIFIED item.** Re-sending publishes a second copy and fires
+a second push notification at every user. On 2026-08-18 three items were reported
+as "failed", re-sent on that basis, and went out twice with duplicate PNs.
+
+An UNVERIFIED item is **not** a missing post and is **not** a reason to re-run the
+poster. It is a reason to ask a human to check `news_generation_logs` / the D2R
+panel. Only a human who has confirmed the post is genuinely absent may re-send it.
 
 **Do NOT alert for:** a normal clean run, or a stale-paper reuse day (that is expected
 behaviour, not a failure — it goes in the run report, not a Slack DM).
@@ -142,6 +165,14 @@ codes. (On 2026-08-17 the रुझान post came back 200 with
 
 Keep the DM short and factual: posting date, what failed, the error text, what did go
 live, and whether the ledger was pushed. Do not retry the poster.
+
+**Report every item in exactly one of three buckets — PUBLISHED / FAILED / UNVERIFIED —
+and never collapse UNVERIFIED into FAILED.** For each UNVERIFIED item state plainly:
+"may already be live with its PN sent — do not re-send until checked". Give the post
+ids for PUBLISHED items and say explicitly that UNVERIFIED items have no id, which is
+why they need a manual check. If the operator asks to re-send anything, confirm which
+bucket it is in first — an UNVERIFIED item needs a human to verify absence before it
+goes again.
 
 ### Ledger field
 
