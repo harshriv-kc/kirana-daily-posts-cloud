@@ -167,6 +167,37 @@ Rules, non-negotiable:
 
 The durable fix is a backend `idempotency_key` — see `TECH-ASK-postAutomation.md`.
 
+### ✅ MANDATORY STEP 8b — RECONCILE against news_generation_logs
+
+**`postAutomation` averages ~14.8 minutes per call** (documented in
+`Hogwarts-CloudSpells/UTILITY/CLAUDE.md`) while the proxy cuts at ~300s. So the poster
+routinely never sees a response even though the post WAS created. **The poster's own log
+is therefore NOT the source of truth.**
+
+The cloud function writes every call to **`news_generation_logs`** (database `main`,
+readable via Birbal `query_db`). That IS the source of truth, and it carries the itemID:
+
+```
+itemID   = $.data.results.news.id   of news_api_response
+post_name= $[0].post_name           of request_data
+timestamp= when the request STARTED (id is assigned when it FINISHED)
+```
+
+**After every poster run, run `reconcile.sql`** (repo root) for the posting date and:
+
+1. Report the **itemID of all 8 posts** — including any whose response was lost. Never
+   again report a post as "unknown, no item ID".
+2. Flag any `live_copies > 1` as a **duplicate that must be deleted**, naming the exact
+   itemIDs and which to keep (keep the earliest successful copy).
+
+Precedent — both days duplicated for exactly this reason, the 18th before this rule
+existed and the 19th from a resume:
+
+| Date | Live | Should be | Duplicated |
+|---|---|---|---|
+| 2026-08-18 | 11 | 8 | Samachar, दाल/शक्कर, रुझान |
+| 2026-08-19 | 10 | 8 | Samachar, दाल/शक्कर |
+
 Keep the DM short and factual: posting date, what failed, the error text, what did go
 live, and whether the ledger was pushed. Do not retry the poster.
 

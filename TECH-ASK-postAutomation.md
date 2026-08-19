@@ -85,7 +85,29 @@ No request would ever approach 300s again, and every response carries an ID.
 `d2r_link` / `not_found`.
 
 Lets the caller reconcile a lost response without ever re-sending blind. Weakest
-of the three (it is a workaround, not a fix) but unblocks us.
+of the three (it is a workaround, not a fix) but unblocks us. Note we can already
+do this read-only against `news_generation_logs` — an endpoint would just make it
+available to the poster itself rather than only to an operator with DB access.
+
+---
+
+## The duration problem, measured
+
+`Hogwarts-CloudSpells/UTILITY/CLAUDE.md` documents postAutomation at **14.8 min
+average execution time** — "one of the longest-running non-cron functions". The
+caller is cut at 5 min. **The endpoint is ~3x over the budget any HTTP caller
+behind a proxy can give it.** That is the root cause of every symptom here:
+lost responses, missing item IDs, and the duplicates that follow from re-sending.
+
+Measured consequence over two days (from `news_generation_logs`):
+
+| Date | Posts live | Should be | Duplicated |
+|---|---|---|---|
+| 2026-08-18 | 11 | 8 | Samachar, दाल/शक्कर, रुझान |
+| 2026-08-19 | 10 | 8 | Samachar, दाल/शक्कर |
+
+Five duplicate posts, each with its own push notification to every user, across
+two consecutive days.
 
 ---
 
