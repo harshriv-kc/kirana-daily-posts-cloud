@@ -92,6 +92,14 @@ rule + precedents: `kirana-posts-content.md` → "WHICH PAPER TO USE — THE LAT
 ledger push fails): **Slack DM Harsh — `U09K92G1U1X` — and nobody else.** A stale-paper
 reuse day is NOT a failure and gets no DM. See `kirana-posts-content.md` → "FAILURE ALERTS".
 
+**⛔ Never send a post twice.** Launch `post_items.py` **detached**, never in the
+foreground (a foreground cap killed the 2026-08-19 run mid-way). It is at-most-once: an
+item it has already attempted is never re-sent, so re-running it is safe and sends
+nothing new. A response lost at the ~300s proxy cut means the post **probably exists** —
+never re-send it yourself; report it as UNKNOWN and let the operator check the feed and
+run `--force`. Always report every item ID and d2r link. Full rule:
+`kirana-posts-content.md` → "NEVER SEND AN ITEM TWICE".
+
 ## Workflow
 
 1. **Read the VK PDF** (in `/mnt/user-data/uploads/`). It is in context as an image/PDF — decode

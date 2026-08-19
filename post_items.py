@@ -1,13 +1,57 @@
-import json
-import requests
-from datetime import datetime
-import sys
-import os
-import traceback
+"""
+Post the daily Kirana items to the D2R postAutomation API.
 
+DESIGN RULE #1 — AT MOST ONCE. NEVER TWICE.
+-------------------------------------------
+On 2026-08-19 the Samachar post was published twice. Cause: the egress proxy
+severs any request at ~300s, so the response was lost; the outcome was unknown;
+the item was sent a second time; both sends had in fact reached the backend and
+each created a post.
+
+So this script treats "sent" — not "succeeded" — as the irreversible act:
+
+  * A per-day state file records every item BEFORE its request goes out, and is
+    fsynced to disk so a SIGKILL cannot lose it.
+  * An item that has EVER been attempted is never sent again automatically.
+    Not on resume, not after a crash, not after a lost response.
+  * Re-sending is only possible by a human passing --force <post_name>, after
+    they have looked at the feed and confirmed the post is not there.
+
+That makes a duplicate structurally impossible rather than merely unlikely.
+
+DESIGN RULE #2 — NEVER LOSE AN ITEM ID WE WERE GIVEN.
+-----------------------------------------------------
+The old script only wrote its results file after all 8 items finished, so when
+the process was killed mid-run the itemID of the already-published सोया तेल post
+was lost with it. Every result is now persisted the moment it arrives.
+
+Usage:
+    python post_items.py                      # send everything not yet attempted
+    python post_items.py --status             # print the ledger, send nothing
+    python post_items.py --force "Samachar"   # deliberate re-send, human-checked
+"""
+import argparse
+import json
+import os
+import sys
+import traceback
+from datetime import datetime
+
+import requests
 
 API_URL = "https://asia-south1-op-d2r.cloudfunctions.net/postAutomation"
 INPUT_FILE = "request_body.json"
+
+# The proxy severs at ~300s. Give up at 295s so we record a clean PROXY_CUT
+# instead of an opaque stack trace — the request may still land server-side,
+# which is exactly why such an item is never retried.
+REQUEST_TIMEOUT = 295
+
+ST_PENDING = "PENDING"    # never attempted — safe to send
+ST_SENT = "SENT"          # request went out; outcome not yet known
+ST_PUBLISHED = "PUBLISHED"  # confirmed created, itemID captured
+ST_UNKNOWN = "UNKNOWN"    # response lost — MAY OR MAY NOT EXIST. Never auto-retried.
+ST_REJECTED = "REJECTED"  # backend explicitly said it did not create the post
 
 
 def ts():
@@ -21,128 +65,216 @@ def log(msg):
         lf.write(line + "\n")
 
 
+def save_state(state):
+    """Write + fsync the ledger. Must survive SIGKILL — it is the duplicate guard."""
+    tmp = STATE_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, STATE_FILE)
+
+
+def load_state(posts):
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    else:
+        state = {"date": TODAY, "items": {}}
+
+    for i, p in enumerate(posts, start=1):
+        name = p.get("post_name", f"item{i}")
+        state["items"].setdefault(name, {
+            "order": i, "status": ST_PENDING, "attempts": 0,
+            "item_id": None, "d2r_link": None, "detail": None, "elapsed": None,
+        })
+    return state
+
+
+def extract_ids(resp_data):
+    """Pull (item_id, d2r_link, ok, detail) out of a postAutomation response body.
+
+    HTTP 200 is NOT proof of creation: the backend answers 200 with
+    success:false when the downstream News API fails.
+    """
+    posts = (resp_data or {}).get("data")
+    if isinstance(posts, list) and posts:
+        p = posts[0]
+        ok = bool(p.get("success"))
+        link = p.get("d2r_link") or p.get("link") or ""
+        item_id = p.get("itemId") or p.get("item_id") or p.get("id")
+        if not item_id and link:
+            item_id = link.rstrip("/").rsplit("/", 1)[-1]  # .../article/view/<uuid>
+        return item_id, link, ok, (None if ok else (p.get("error") or "success=false"))
+    if (resp_data or {}).get("success") is False:
+        return None, None, False, str((resp_data or {}).get("message") or "success=false")
+    return None, None, False, "unrecognised response shape"
+
+
+def report(state, posts):
+    log("=" * 72)
+    log("LEDGER")
+    order = sorted(state["items"].items(), key=lambda kv: kv[1]["order"])
+    for name, it in order:
+        line = f"  {it['order']}. {name:<28} {it['status']:<10}"
+        if it.get("d2r_link"):
+            line += f" {it['d2r_link']}"
+        elif it.get("detail"):
+            line += f" ({it['detail']})"
+        log(line)
+
+    published = [n for n, i in order if i["status"] == ST_PUBLISHED]
+    unknown = [n for n, i in order if i["status"] in (ST_SENT, ST_UNKNOWN)]
+    rejected = [n for n, i in order if i["status"] == ST_REJECTED]
+    pending = [n for n, i in order if i["status"] == ST_PENDING]
+
+    log("-" * 72)
+    log(f"PUBLISHED (itemID captured): {len(published)}/{len(posts)}")
+    if rejected:
+        log(f"REJECTED by backend: {len(rejected)} -> {', '.join(rejected)}")
+    if pending:
+        log(f"NOT SENT: {len(pending)} -> {', '.join(pending)}")
+    if unknown:
+        log("")
+        log(f"!! MANUAL CHECK REQUIRED: {len(unknown)} item(s) were sent once but the")
+        log("!! response was lost. They may or may not be live. They will NOT be")
+        log("!! retried automatically — that is what prevents a duplicate.")
+        for n in unknown:
+            log(f"!!   - {n}")
+        log("!! Look at the feed. If one is genuinely missing, publish it with:")
+        log(f'!!   python post_items.py --force "{unknown[0]}"')
+    log("=" * 72)
+    return len(published), unknown, rejected, pending
+
+
 def main():
-    global LOG_FILE
+    global LOG_FILE, STATE_FILE, TODAY
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    LOG_FILE = f"post_{today}.log"
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--status", action="store_true",
+                    help="print the ledger and exit without sending anything")
+    ap.add_argument("--force", action="append", default=[], metavar="POST_NAME",
+                    help="re-send one item whose outcome was unknown. Only after "
+                         "checking the feed — this CAN create a duplicate.")
+    args = ap.parse_args()
 
-    log("=" * 60)
-    log("Script started")
-    log(f"Log file: {LOG_FILE}")
-    log(f"Input file: {INPUT_FILE}")
-    log(f"Target API: {API_URL}")
-    log("=" * 60)
+    TODAY = datetime.now().strftime("%Y-%m-%d")
+    LOG_FILE = f"post_{TODAY}.log"
+    STATE_FILE = f"post_state_{TODAY}.json"
 
     if not os.path.exists(INPUT_FILE):
-        log(f"ERROR: Input file '{INPUT_FILE}' not found. Exiting.")
+        print(f"ERROR: {INPUT_FILE} not found.")
         sys.exit(1)
-
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         request_body = json.load(f)
-
-    # Ensure we have a list of items
     if not isinstance(request_body, list):
         request_body = [request_body]
 
-    total = len(request_body)
-    log(f"Request body loaded successfully ({total} item(s))")
+    state = load_state(request_body)
 
-    results = []
-    success_count = 0
-    failed_items = []
-    fail_count = 0
-    overall_start = datetime.now()
+    if args.status:
+        LOG_FILE = os.devnull
+        report(state, request_body)
+        return
+
+    log("=" * 72)
+    log(f"Script started | input={INPUT_FILE} | items={len(request_body)}")
+    log(f"State ledger: {STATE_FILE}")
+    log(f"Client timeout {REQUEST_TIMEOUT}s (proxy severs at ~300s)")
+    if args.force:
+        log(f"FORCE re-send requested for: {args.force}")
+    log("=" * 72)
 
     for i, item in enumerate(request_body, start=1):
-        log(f"--- Sending item {i}/{total} ---")
-        start_time = datetime.now()
+        name = item.get("post_name", f"item{i}")
+        entry = state["items"][name]
 
+        if entry["status"] == ST_PUBLISHED:
+            log(f"--- SKIP {i}/{len(request_body)} {name}: already published "
+                f"({entry.get('d2r_link')})")
+            continue
+
+        if entry["status"] in (ST_SENT, ST_UNKNOWN) and name not in args.force:
+            log(f"--- SKIP {i}/{len(request_body)} {name}: already sent once, outcome "
+                f"unknown. NOT retrying (duplicate guard). Use --force to override.")
+            continue
+
+        if entry["status"] == ST_REJECTED and name not in args.force:
+            log(f"--- SKIP {i}/{len(request_body)} {name}: backend rejected it "
+                f"({entry.get('detail')}). Use --force to retry.")
+            continue
+
+        # Record the attempt BEFORE the request leaves. If we are killed between
+        # here and the response, the item still reads as SENT and is never resent.
+        entry["status"] = ST_SENT
+        entry["attempts"] += 1
+        entry["detail"] = "request in flight"
+        save_state(state)
+
+        log(f"--- Sending {i}/{len(request_body)} {name} (attempt {entry['attempts']}) ---")
+        start = datetime.now()
         try:
             response = requests.post(
                 API_URL,
                 headers={"Content-Type": "application/json"},
-                json=[item],  # Send as single-item list to match original format
-                timeout=600,  # 10 minutes
+                json=[item],
+                timeout=REQUEST_TIMEOUT,
             )
-
-            elapsed = (datetime.now() - start_time).total_seconds()
-            log(f"Item {i}/{total} responded: Status {response.status_code} ({elapsed:.2f}s)")
+            elapsed = (datetime.now() - start).total_seconds()
+            entry["elapsed"] = round(elapsed, 2)
 
             try:
                 resp_data = response.json()
             except json.JSONDecodeError:
                 resp_data = {"raw_text": response.text}
 
-            results.append({
-                "item_index": i,
-                "status_code": response.status_code,
-                "elapsed_seconds": round(elapsed, 2),
-                "response": resp_data,
-            })
-
-            # HTTP 200 is NOT proof the post was created. The backend answers 200
-            # with {"success": false, "data":[{"success": false, "error": ...}]}
-            # when the downstream News API fails (seen 2026-08-17: the रुझान post
-            # came back 200 / "News API failed: API Error: 404" and was silently
-            # counted as a success). Trust the body, not the status line.
-            item_errors = []
             if response.status_code != 200:
-                item_errors.append(f"HTTP {response.status_code}")
+                entry["status"] = ST_REJECTED
+                entry["detail"] = f"HTTP {response.status_code}"
+                log(f"REJECTED {name}: HTTP {response.status_code} ({elapsed:.1f}s)")
             else:
-                posts = (resp_data or {}).get("data")
-                if isinstance(posts, list) and posts:
-                    for p in posts:
-                        if not p.get("success"):
-                            item_errors.append(
-                                f"{p.get('post_name') or 'post'}: "
-                                f"{p.get('error') or 'success=false'}")
-                elif (resp_data or {}).get("success") is False:
-                    item_errors.append(str((resp_data or {}).get("message") or "success=false"))
+                item_id, link, ok, detail = extract_ids(resp_data)
+                if ok:
+                    entry["status"] = ST_PUBLISHED
+                    entry["item_id"] = item_id
+                    entry["d2r_link"] = link
+                    entry["detail"] = None
+                    log(f"PUBLISHED {name} ({elapsed:.1f}s) itemID={item_id}")
+                    log(f"          {link}")
+                else:
+                    entry["status"] = ST_REJECTED
+                    entry["detail"] = detail
+                    log(f"REJECTED {name}: {detail} ({elapsed:.1f}s)")
 
-            if item_errors:
-                fail_count += 1
-                failed_items.append((i, item_errors))
-                log(f"FAILED: Item {i}/{total} did NOT publish — {'; '.join(item_errors)}")
-            else:
-                success_count += 1
-
-        except requests.exceptions.Timeout:
-            elapsed = (datetime.now() - start_time).total_seconds()
-            log(f"TIMEOUT: Item {i}/{total} timed out after {elapsed:.2f}s")
-            results.append({"item_index": i, "error": "timeout", "elapsed_seconds": round(elapsed, 2)})
-            fail_count += 1
-
-        except requests.exceptions.ConnectionError as e:
-            elapsed = (datetime.now() - start_time).total_seconds()
-            log(f"CONNECTION ERROR: Item {i}/{total} after {elapsed:.2f}s: {e}")
-            log(traceback.format_exc())
-            results.append({"item_index": i, "error": str(e), "elapsed_seconds": round(elapsed, 2)})
-            fail_count += 1
+        except (requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError) as e:
+            elapsed = (datetime.now() - start).total_seconds()
+            entry["status"] = ST_UNKNOWN
+            entry["elapsed"] = round(elapsed, 2)
+            entry["detail"] = (
+                f"response lost after {elapsed:.0f}s (proxy cut at ~300s). "
+                f"The request reached the backend; the post MAY exist."
+            )
+            log(f"RESPONSE LOST {name} after {elapsed:.1f}s — treating as UNKNOWN, "
+                f"will NOT retry. {type(e).__name__}")
 
         except Exception as e:
-            elapsed = (datetime.now() - start_time).total_seconds()
-            log(f"ERROR: Item {i}/{total} after {elapsed:.2f}s: {type(e).__name__}: {e}")
+            elapsed = (datetime.now() - start).total_seconds()
+            entry["status"] = ST_UNKNOWN
+            entry["elapsed"] = round(elapsed, 2)
+            entry["detail"] = f"{type(e).__name__}: {e}"
+            log(f"ERROR {name} after {elapsed:.1f}s: {type(e).__name__}: {e}")
             log(traceback.format_exc())
-            results.append({"item_index": i, "error": str(e), "elapsed_seconds": round(elapsed, 2)})
-            fail_count += 1
 
-    total_elapsed = (datetime.now() - overall_start).total_seconds()
-    log("=" * 60)
-    log(f"All items processed. PUBLISHED: {success_count}, FAILED: {fail_count}, "
-        f"Total time: {total_elapsed:.2f}s")
-    for idx, errs in failed_items:
-        log(f"  -> item {idx} FAILED: {'; '.join(errs)}")
+        # Persist immediately — an itemID must never die with the process.
+        save_state(state)
 
-    output_file = f"post_{today}.json"
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    log(f"Results saved to '{output_file}'")
-    log("Script completed.")
-    log("=" * 60)
-    # Non-zero exit when ANY item failed to publish, so the caller can branch on it
-    # and raise the Slack alert instead of reading a misleading success line.
-    if fail_count:
+    n_pub, unknown, rejected, pending = report(state, request_body)
+
+    with open(f"post_{TODAY}.json", "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+    if unknown or rejected or pending:
         sys.exit(2)
 
 

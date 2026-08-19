@@ -135,10 +135,37 @@ behaviour, not a failure — it goes in the run report, not a Slack DM).
 
 **Judging the poster correctly:** HTTP 200 is NOT proof a post was created. The backend
 returns 200 with `{"success": false, "data":[{"success": false, "error": ...}]}` when the
-downstream News API fails. `post_items.py` now reads the body and exits non-zero if any
-item failed — trust its exit code and its `PUBLISHED / FAILED` line, never the raw status
+downstream News API fails. `post_items.py` reads the body and exits non-zero if any
+item did not publish — trust its exit code and its LEDGER, never the raw status
 codes. (On 2026-08-17 the रुझान post came back 200 with
 `News API failed: API Error: 404` and the old code reported "Success: 8, Failed: 0".)
+
+### ⛔ NEVER SEND AN ITEM TWICE — the 2026-08-19 duplicate
+
+**A lost response is AMBIGUOUS, not a failure. The post was probably created.**
+
+The egress proxy severs any request at ~300s. Posts carrying a second image
+(`pn_image_prompt` — Samachar, दाल/शक्कर, रुझान, TN1, TN2) take 200–300s+, so their
+responses get cut regularly. On 2026-08-19 the poster was resumed and re-sent Samachar;
+both sends had actually succeeded, so **the post went out twice, with two push
+notifications to every user.**
+
+Rules, non-negotiable:
+
+- **`post_items.py` is at-most-once.** It writes and fsyncs each attempt to
+  `post_state_<date>.json` *before* the request leaves, so any item ever attempted is
+  never re-sent automatically — not on resume, not after a crash, not after a lost
+  response. Just re-running it is now safe: it sends nothing it has already tried.
+- **Never re-send an UNKNOWN item yourself.** The script prints a MANUAL CHECK REQUIRED
+  list. That is for a human who has looked at the feed. Only they run
+  `python post_items.py --force "<post_name>"`.
+- **Always launch the poster detached** (`run_in_background`), never in the foreground.
+  The 2026-08-19 run was killed by a 10-minute foreground cap after 2 of 8 items, which
+  is what triggered the resume that caused the duplicate.
+- **The run report must list every item ID and d2r link**, and name every UNKNOWN item
+  explicitly so the operator knows exactly what to eyeball.
+
+The durable fix is a backend `idempotency_key` — see `TECH-ASK-postAutomation.md`.
 
 Keep the DM short and factual: posting date, what failed, the error text, what did go
 live, and whether the ledger was pushed. Do not retry the poster.
