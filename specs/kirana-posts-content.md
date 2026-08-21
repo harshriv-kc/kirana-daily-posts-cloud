@@ -111,6 +111,45 @@ used. `fetch` flags both identically as `stale_reuse: true` + `already_used_on`:
 Precedents: 2026-08-16 / 2026-08-17 (both VK-15-August), 2026-08-01 / 2026-08-02
 (both VK-31-JULY), 2026-07-19 / 2026-07-20 (both VK-18).
 
+### 📲 WHATSAPP FALLBACK — try this BEFORE accepting a stale-paper day
+
+**The subscription also delivers the paper over WhatsApp.** So when the website
+upload is missing, the real paper usually still exists — check for it before
+falling back to yesterday's issue.
+
+Trigger: `fetch` reports `stale_reuse: true`, **and** `not_published_dates`
+contains the posting date (i.e. the media library confirms the publisher never
+uploaded that day's PDF — see the 2026-08-21 precedent below).
+
+Steps:
+
+1. **Look in Google Drive**, folder **"Kirana Daily Posts"**
+   (`1UOxJf1q_4B76ks_h5oxhc20z1jjA7QpE`), for a PDF whose name carries the
+   posting date — `VK-<DD>-<Month>-<YYYY>.pdf`. Use
+   `Google Drive:search_files` with `parentId = '1UOxJf1q_4B76ks_h5oxhc20z1jjA7QpE'`,
+   then `Google Drive:download_file_content` (returns base64 — decode to a real
+   `.pdf` on disk).
+2. **If found**, run fetch with it and use that payload for the whole run:
+   `python run_kirana.py fetch --posting-date <P> --local-pdf <path>`
+   It validates the magic bytes and size (an HTML pricing page saved as `.pdf`
+   is rejected), reports `source: "manual"`, and still computes `gap_days`,
+   `stale_reuse` and `already_used_on` normally — so the ledger stays honest.
+   This is a **normal fresh-paper day**: no reuse framing, no reuse `_note`.
+3. **If not found**, proceed with the stale-paper reuse rules above. Do not
+   wait, do not skip the day, and do not ask — the 8 posts still go out.
+   Mention in the run report that no manual copy was available.
+
+**Claude has no WhatsApp access** — it cannot pull the file from the chat
+itself. The Drive drop is the handoff; if nothing is there, step 3 applies.
+
+Precedent — 2026-08-21: the site published the *post* and its front-page
+thumbnail (`Capture-15.jpg`, 20 Aug 22:23 IST) but **never attached the PDF**;
+the media library's newest PDF stayed `VK-20-AUGUST-2026.pdf`. Unrelated to
+billing: the e-paper *post pages* are subscriber-gated by a Content Control
+plugin and serve the pricing page to anonymous visitors (true for 19, 20 and 21
+August alike), but the raw `/palaheeh/...pdf` files are ungated and download
+fine without any account.
+
 ---
 
 ## FAILURE ALERTS — Slack DM to Harsh, nobody else

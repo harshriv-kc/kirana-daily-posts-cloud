@@ -352,6 +352,54 @@ def cmd_fetch(args):
     attempts = []
     used_before = _previously_used_pdfs(args.ledger)
     skipped_unpublished = []   # dates the media library confirms have no PDF at all
+
+    # MANUAL OVERRIDE (--local-pdf): use an operator-supplied copy instead of the
+    # website. The publisher's subscription also delivers the paper over WhatsApp,
+    # so on a day the site upload is missing (2026-08-21: post + thumbnail went up,
+    # PDF never did) the operator can drop that copy in and still post the real
+    # paper rather than falling back to yesterday's. Everything downstream —
+    # gap_days, stale_reuse, already_used_on — is computed exactly as for a
+    # web-fetched file, so the dedup ledger stays honest.
+    if getattr(args, "local_pdf", None):
+        src = os.path.abspath(args.local_pdf)
+        if not os.path.isfile(src):
+            print(json.dumps({"ok": False, "posting_date": posting.isoformat(),
+                              "reason": f"--local-pdf not found: {src}"},
+                             ensure_ascii=False))
+            return 2
+        payload = open(src, "rb").read()
+        if not payload.startswith(b"%PDF") or len(payload) < MIN_PDF_BYTES:
+            print(json.dumps({
+                "ok": False, "posting_date": posting.isoformat(),
+                "reason": (f"--local-pdf is not a usable VK PDF "
+                           f"(bytes={len(payload)}, magic={payload[:4]!r})"),
+            }, ensure_ascii=False))
+            return 2
+        pdf_dir = os.path.join(BASE_DIR, "pdfs")
+        os.makedirs(pdf_dir, exist_ok=True)
+        fname = os.path.basename(src)
+        path = os.path.join(pdf_dir, fname)
+        if os.path.abspath(path) != src:
+            with open(path, "wb") as f:
+                f.write(payload)
+        pdf_date = (datetime.strptime(args.local_pdf_date, "%Y-%m-%d").date()
+                    if getattr(args, "local_pdf_date", None) else posting)
+        prior = used_before.get(fname.lower())
+        print(json.dumps({
+            "ok": True, "path": path, "url": f"file://{src}",
+            "source": "manual",           # not from vyaparkesari.com
+            "posting_date": posting.isoformat(),
+            "pdf_date_used": pdf_date.isoformat(),
+            "pdf_used": fname,
+            "gap_days": (posting - pdf_date).days,
+            "weekend_fallback": False,
+            "stale_reuse": prior is not None,
+            "already_used_on": prior,
+            "bytes": len(payload),
+            "date_decision": decision,
+            "attempts": [],
+        }, ensure_ascii=False))
+        return 0
     for i in range(args.max_back + 1):
         d = start - timedelta(days=i)
         ok, url, payload, tried, absent_confirmed = _try_download(d)
@@ -407,6 +455,12 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     pf = sub.add_parser("fetch", help="download the newest available VK PDF")
     pf.add_argument("--posting-date", help="YYYY-MM-DD (override; default: decided from ledger + IST time)")
+    pf.add_argument("--local-pdf", metavar="PATH",
+                    help="Use this PDF instead of downloading (e.g. the copy the "
+                         "subscription delivers over WhatsApp, when the site upload "
+                         "is missing). Skips the web search entirely.")
+    pf.add_argument("--local-pdf-date", metavar="YYYY-MM-DD",
+                    help="Cover date of --local-pdf, for gap_days. Default: posting date.")
     pf.add_argument("--max-back", type=int, default=4,
                     help="how many days back to search for a paper (default 4, covers weekends)")
     pf.add_argument("--cutoff", default="18:00",
