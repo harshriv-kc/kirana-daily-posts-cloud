@@ -101,6 +101,15 @@ URL_TMPL = "https://vyaparkesari.com/palaheeh/{yyyy}/{mm}/VK-{dd}-{MONTH}-{yyyy}
 HEADERS = {"User-Agent": "Mozilla/5.0", "Referer": "https://vyaparkesari.com/"}
 MIN_PDF_BYTES = 500_000  # a real VK PDF is multi-MB; guard against error pages
 
+# Guessing filenames cannot tell "no paper was published" apart from "published
+# under a name we did not guess" — both look like a 404. Real names do carry
+# surprises the template misses, e.g. VK-18-AUGUST-2026-1.pdf and
+# VK-14-August-2026-1.pdf (a re-upload suffix). WordPress exposes its media
+# library over REST, which returns the EXACT source_url whatever the naming, so
+# we ask it first and keep the guessing below as an offline fallback.
+MEDIA_API = "https://vyaparkesari.com/wp-json/wp/v2/media"
+MEDIA_TIMEOUT = 30
+
 
 def _ist_now():
     return datetime.now(IST)
@@ -128,12 +137,62 @@ def _urls_for(d):
     return urls
 
 
+def _media_urls_for(d):
+    """Ask the site's media library which VK PDF actually exists for date d.
+
+    Returns (urls_newest_upload_first, api_reachable). An empty list with
+    api_reachable True is a POSITIVE result: the publisher genuinely has not
+    uploaded that day's PDF, so a stale-paper fallback is correct rather than a
+    naming miss we should have caught. Never raises — on any network/parse
+    problem it degrades to (…, False) and the caller falls back to guessing.
+    """
+    params = {
+        "mime_type": "application/pdf",
+        # Cover-date-D issues are uploaded the evening of D-1, occasionally on D
+        # itself; a generous window costs nothing and tolerates late uploads.
+        "after": (d - timedelta(days=4)).isoformat() + "T00:00:00",
+        "before": (d + timedelta(days=2)).isoformat() + "T00:00:00",
+        "per_page": 50,
+        "orderby": "date",
+        "order": "desc",
+    }
+    try:
+        r = requests.get(MEDIA_API, params=params, headers=HEADERS, timeout=MEDIA_TIMEOUT)
+        if r.status_code != 200:
+            return [], False
+        items = r.json()
+        if not isinstance(items, list):
+            return [], False
+    except Exception:
+        return [], False
+
+    # VK-<d|dd>-<Month any case>-<yyyy>[-N].pdf — the -N suffix is a re-upload.
+    pat = re.compile(
+        r"^VK-0?{day}-{month}-{year}(?:-\d+)?\.pdf$".format(
+            day=d.day, month=re.escape(d.strftime("%B")), year=d.year),
+        re.IGNORECASE,
+    )
+    urls = []
+    for m in items:
+        src = (m or {}).get("source_url") or ""
+        if src and pat.match(os.path.basename(src)):
+            urls.append(src)
+    return urls, True
+
+
 def _try_download(d):
-    """Probe every casing for date d. Returns (ok, url, payload_or_errsummary, tried).
+    """Resolve and download date d's PDF.
+
+    Returns (ok, url, payload_or_errsummary, tried, absent_confirmed).
     `url` is the working URL on success (exact server casing), else the first tried.
-    `tried` lists each casing attempt so callers can log what was probed."""
+    `tried` lists each attempt so callers can log what was probed.
+    `absent_confirmed` is True only when the media API answered and holds no PDF
+    for d — i.e. the paper is genuinely unpublished, not merely unguessable."""
     tried = []
-    urls = _urls_for(d)
+    media_urls, api_ok = _media_urls_for(d)
+    absent_confirmed = api_ok and not media_urls
+    # Media-library hits first (authoritative), then the guessed names as backup.
+    urls = media_urls + [u for u in _urls_for(d) if u not in media_urls]
     for url in urls:
         try:
             r = requests.get(url, headers=HEADERS, timeout=120)
@@ -148,9 +207,11 @@ def _try_download(d):
             tried.append({"url": url, "result": f"not a pdf (ctype={ctype}, bytes={len(r.content)})"})
             continue
         tried.append({"url": url, "result": "ok"})
-        return True, url, r.content, tried
+        return True, url, r.content, tried, absent_confirmed
     summary = "; ".join(f"{t['url'].rsplit('/', 1)[-1]}={t['result']}" for t in tried)
-    return False, urls[0], summary, tried
+    if absent_confirmed:
+        summary = "media library has no PDF for this date (not published); " + summary
+    return False, urls[0], summary, tried, absent_confirmed
 
 
 def _last_posted_date(ledger_path):
@@ -290,12 +351,16 @@ def cmd_fetch(args):
     start = posting
     attempts = []
     used_before = _previously_used_pdfs(args.ledger)
+    skipped_unpublished = []   # dates the media library confirms have no PDF at all
     for i in range(args.max_back + 1):
         d = start - timedelta(days=i)
-        ok, url, payload, tried = _try_download(d)
+        ok, url, payload, tried, absent_confirmed = _try_download(d)
         attempts.append({"date": d.isoformat(), "url": url,
                          "result": "ok" if ok else payload,
+                         "not_published": absent_confirmed,
                          "tried": tried})
+        if not ok and absent_confirmed:
+            skipped_unpublished.append(d.isoformat())
         if ok:
             pdf_dir = os.path.join(BASE_DIR, "pdfs")
             os.makedirs(pdf_dir, exist_ok=True)
@@ -316,6 +381,10 @@ def cmd_fetch(args):
                 # Not an error — post anyway, but every dedup axis MUST change.
                 "stale_reuse": prior is not None,
                 "already_used_on": prior,
+                # Dates skipped because the publisher never uploaded a PDF for
+                # them (media library confirms absence) — distinguishes a real
+                # publisher gap from a filename we failed to guess.
+                "not_published_dates": skipped_unpublished,
                 "bytes": len(payload),
                 "date_decision": decision,
                 "attempts": attempts,
@@ -326,6 +395,7 @@ def cmd_fetch(args):
         "ok": False,
         "posting_date": posting.isoformat(),
         "reason": f"No VK PDF found within {args.max_back} days before posting date",
+        "not_published_dates": skipped_unpublished,
         "date_decision": decision,
         "attempts": attempts,
     }, ensure_ascii=False))
