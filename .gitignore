@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 build_posts.py
 poster_*.out
+poster_*.log
