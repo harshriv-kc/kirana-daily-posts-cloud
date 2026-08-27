@@ -205,7 +205,11 @@ CTA and render a pretty poster with no furniture. See 4.6.)
    (`27 अगस्त 2026`). Top-left.
 2. **HEADLINE** — 2 lines, huge, heavy Devanagari. The day's story in ≤18 characters per line.
 3. **HERO LINE** — exactly ONE number: the day's single biggest price move, as a self-contained
-   sentence (`चीनी में 900 रुपये की गिरावट`). Accent colour.
+   sentence. Accent colour. **Carry the unit, and write it as `कुंतल`, never `क्विंटल`** — the
+   क्व conjunct is the one that reliably breaks (see 4.6 #4), while कुंतल has no conjunct at all
+   and is what व्यापार केसरी itself prints. So: `चीनी 900 रुपये प्रति कुंतल टूटी`, not the
+   unitless `चीनी में 900 रुपये की गिरावट` — without a unit a shopkeeper may read 900 as
+   per-kilo or per-bag.
 4. **CTA** — a pill reading `पूरी रिपोर्ट पढ़ें →`.
 5. **BOTTOM STRIP** — a full-width band across the very bottom, styled like a live TV news
    ticker: a solid RED flag box reading `आज की मंडी`, then 5–6 commodities, each as
@@ -308,7 +312,7 @@ treatment inside it* — a named, concrete art direction with its own palette, m
 | Family | Invent within it, e.g. |
 |---|---|
 | **दस्तावेजी फोटो** | golden-hour documentary · blue-hour cinematic · monsoon overcast · harsh noon high-contrast · lantern-lit night shift |
-| **छपाई / प्रिंट** | 1960s letterpress b/w · 1980s tabloid with one spot colour · Hindi broadsheet on cream stock · microfiche archive · smudged proof sheet |
+| **छपाई / प्रिंट** | 1960s letterpress b/w · 1980s tabloid with one spot colour · Hindi broadsheet on cream stock · microfiche archive · smudged proof sheet — **always with a halftone photo block, never type alone (see 4.6 #11)** |
 | **चित्रण** | two-colour risograph · mid-century screen print · woodcut/linocut · ink-wash brush · flat geometric vector · truck-art folk motif |
 | **पदार्थ / मैक्रो** | duotone crystal macro · light-table backlit grain · soft-shadow flat-lay on linen · wet-plate texture |
 | **पुरालेख** | sepia archival · faded photo-album print · hand-tinted postcard · vintage almanac plate |
@@ -353,7 +357,7 @@ dedup axes exactly like the Samachar hero and the trending themes — a repeat i
 | 1 | Circular/oval badge crop, vignette | Ban circular/oval/arch masks and vignettes explicitly; demand full-bleed rectangle to all four corners |
 | 2 | Heavy art style swallows the chassis — tag/ticker/CTA silently dropped | List the five chassis elements as mandatory; confine the art to the hero zone; draw the chassis as flat UI *on top* |
 | 3 | **Ticker arrow colours inverted to the Western scheme** | Give the colour for **each item individually**, and state the Indian rule twice: RED = up = तेज, GREEN = down = मंदा |
-| 4 | Devanagari conjuncts break (क्विंटल → किवंटल) | Keep conjunct-heavy words OUT of image text. **Never put क्विंटल in the image** — the unit lives in the post body. Prefer simple words; demand correct conjunct rendering |
+| 4 | Devanagari conjuncts break (क्विंटल → किवंटल) | **Never put क्विंटल in the image — write `कुंतल`,** which carries the same meaning with no conjunct and is standard VK usage. Same trick for any other क्व/ट्र/श्र-heavy word: prefer the plain spoken form. Demand correct conjunct rendering |
 | 5 | Real packaging with legible brand text leaks into photos | Ban packets, wrappers, signage, hoardings, banners, number plates and any readable text inside the photograph |
 | 6 | Generator times out (>60s) on long prompts | **Keep the whole image_prompt under ~1800 characters.** Compact phrasing. If it times out, shorten — do not resend the same length. **But shorten the ART paragraph ONLY — see the prompt budget below** |
 | 6b | **Compressing the prompt silently kills the chassis** | Observed: trimming a prompt to beat the timeout produced a gorgeous photo with zero text on it. The CHASSIS, LAYOUT and BOTTOM STRIP blocks are load-bearing — never compress them to save characters. Cut adjectives from the art description instead |
@@ -362,6 +366,9 @@ dedup axes exactly like the Samachar hero and the trending themes — a repeat i
 | 8 | Hero number reads as a rate without its unit | Hero line must be a complete, honest sentence. Never fabricate a number — it comes from the PDF |
 | 9 | Text overflow at thumbnail size | Headline ≤2 lines, ≤18 chars per line. Ticker ≤6 items. If the hero commodity name is long, drop a ticker item rather than shrink type |
 | 10 | Bullion appears in the art | सोना-चांदी never as subject, headline or ticker icon (body text is still fine) |
+| 11 | **A print treatment renders as a blank page** | Newsprint/riso/screen-print styles will happily produce columns of grey type texture and nothing else, which reads as empty. **Every print treatment must carry a picture** — name a halftone photo block in the right third, in a keyline box with a caption rule — plus real page furniture (masthead double rule, column gutters, one boxed column) |
+| 12 | Ink misregistration fringes the headline | "Slight misregistration" applied to Devanagari headline type reads as a blur or rendering fault, not as print charm. **Confine misregistration to the spot-colour plate and flat blocks; state that the headline type stays crisp and perfectly registered** |
+| 13 | Art renders as an inset rounded card | Some treatments place the picture in a floating panel with rounded corners instead of bleeding to the canvas edge, which breaks the family look. Say the art **bleeds to the top, right and bottom edges** — a keyline box is allowed only *inside* a print page, never around the whole artwork |
 
 **AVOID also:** clutter, poor contrast, rainbow palettes, sparkles, lens flare, glow.
 
@@ -374,10 +381,12 @@ still pays off.
 
 #### 4.7 ASSEMBLED PROMPT — fill and keep under ~1800 characters
 
-**Prompt budget.** Of that ~1800, spend roughly: ART ≤450 chars, LAYOUT ≈550, BOTTOM STRIP ≈450,
-closing rules ≈150. If you must cut, **cut the ART sentence and nothing else** — a thinner art
-description yields a plainer picture, whereas a thinner chassis yields no text at all (see 6b).
-Keep the LAYOUT and BOTTOM STRIP wording verbatim.
+**Prompt budget.** Of that ~1800, spend roughly: ART ≈450–600 chars, LAYOUT ≈550, BOTTOM STRIP
+≈450, closing rules ≈150. Photographic treatments fit in ~450; **print and illustration
+treatments genuinely need ~600**, because the page furniture has to be described or the picture
+comes out empty (see 11). **1800 is the hard cap, 450 is only a guide.** If you must cut, **cut
+the ART sentence and nothing else** — a thinner art description yields a plainer picture, whereas
+a thinner chassis yields no text at all (see 6b). Keep LAYOUT and BOTTOM STRIP verbatim.
 
 ```
 Hindi market news thumbnail, 1920x1080 landscape, Devanagari script only, no English or Latin letters.
