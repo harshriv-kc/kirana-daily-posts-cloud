@@ -205,11 +205,9 @@ CTA and render a pretty poster with no furniture. See 4.6.)
    (`27 अगस्त 2026`). Top-left.
 2. **HEADLINE** — 2 lines, huge, heavy Devanagari. The day's story in ≤18 characters per line.
 3. **HERO LINE** — exactly ONE number: the day's single biggest price move, as a self-contained
-   sentence. Accent colour. **Carry the unit, and write it as `कुंतल`, never `क्विंटल`** — the
-   क्व conjunct is the one that reliably breaks (see 4.6 #4), while कुंतल has no conjunct at all
-   and is what व्यापार केसरी itself prints. So: `चीनी 900 रुपये प्रति कुंतल टूटी`, not the
-   unitless `चीनी में 900 रुपये की गिरावट` — without a unit a shopkeeper may read 900 as
-   per-kilo or per-bag.
+   sentence, **always with its unit** — e.g. `चीनी 900 रुपये प्रति क्विंटल टूटी`. Accent colour.
+   Never drop the unit to dodge a rendering worry: without it a shopkeeper may read 900 as
+   per-kilo or per-bag. `क्विंटल` renders correctly in production and is the word to use.
 4. **CTA** — a pill reading `पूरी रिपोर्ट पढ़ें →`.
 5. **BOTTOM STRIP** — a full-width band across the very bottom, styled like a live TV news
    ticker: a solid RED flag box reading `आज की मंडी`, then 5–6 commodities, each as
@@ -357,7 +355,7 @@ dedup axes exactly like the Samachar hero and the trending themes — a repeat i
 | 1 | Circular/oval badge crop, vignette | Ban circular/oval/arch masks and vignettes explicitly; demand full-bleed rectangle to all four corners |
 | 2 | Heavy art style swallows the chassis — tag/ticker/CTA silently dropped | List the five chassis elements as mandatory; confine the art to the hero zone; draw the chassis as flat UI *on top* |
 | 3 | **Ticker arrow colours inverted to the Western scheme** | Give the colour for **each item individually**, and state the Indian rule twice: RED = up = तेज, GREEN = down = मंदा |
-| 4 | Devanagari conjuncts break (क्विंटल → किवंटल) | **Never put क्विंटल in the image — write `कुंतल`,** which carries the same meaning with no conjunct and is standard VK usage. Same trick for any other क्व/ट्र/श्र-heavy word: prefer the plain spoken form. Demand correct conjunct rendering |
+| 4 | A Devanagari conjunct renders wrong (seen once: क्विंटल → किवंटल) | Rare, and **not a reason to avoid the word.** `क्विंटल` renders correctly in production — a single bad render is a one-off, not a pattern. Ask for correct spelling and conjuncts explicitly (`spell every word exactly as given`) and eyeball the output; never reword or drop a unit to work around it |
 | 5 | Real packaging with legible brand text leaks into photos | Ban packets, wrappers, signage, hoardings, banners, number plates and any readable text inside the photograph |
 | 6 | Generator times out (>60s) on long prompts | **Keep the whole image_prompt under ~1800 characters.** Compact phrasing. If it times out, shorten — do not resend the same length. **But shorten the ART paragraph ONLY — see the prompt budget below** |
 | 6b | **Compressing the prompt silently kills the chassis** | Observed: trimming a prompt to beat the timeout produced a gorgeous photo with zero text on it. The CHASSIS, LAYOUT and BOTTOM STRIP blocks are load-bearing — never compress them to save characters. Cut adjectives from the art description instead |
@@ -366,11 +364,11 @@ dedup axes exactly like the Samachar hero and the trending themes — a repeat i
 | 8 | Hero number reads as a rate without its unit | Hero line must be a complete, honest sentence. Never fabricate a number — it comes from the PDF |
 | 9 | Text overflow at thumbnail size | Headline ≤2 lines, ≤18 chars per line. Ticker ≤6 items. If the hero commodity name is long, drop a ticker item rather than shrink type |
 | 10 | Bullion appears in the art | सोना-चांदी never as subject, headline or ticker icon (body text is still fine) |
-| 11 | **A print treatment renders as a blank page** | Newsprint/riso/screen-print styles will happily produce columns of grey type texture and nothing else, which reads as empty. **Every print treatment must carry a picture** — name a halftone photo block in the right third, in a keyline box with a caption rule — plus real page furniture (masthead double rule, column gutters, one boxed column) |
+| 11 | **A print treatment renders as a blank page** | Newsprint/riso/screen-print styles will happily produce columns of type texture and nothing else, which reads as empty. **Every print treatment must carry a picture** — name a photo block in the right third, in a keyline box with a caption rule. That photo plus its caption is what fills the page; do NOT add page furniture to compensate (see 15) |
 | 12 | Ink misregistration fringes the headline | "Slight misregistration" applied to Devanagari headline type reads as a blur or rendering fault, not as print charm. **Confine misregistration to the spot-colour plate and flat blocks; state that the headline type stays crisp and perfectly registered** |
 | 13 | Always framing the art the same way | Full-bleed and a framed inset panel **both look good — neither is wrong.** What is wrong is locking to one. Treat the frame as part of the rotation: some days the art bleeds to the top, right and bottom edges, other days it sits in a panel with a visible edge. Just never the same choice every day |
 | 14 | **Devanagari digits (`२७ अगस्त २०२६`)** | Observed even with "Arabic numerals" in the prompt. State it as a prohibition, not a preference: **"Numerals must be Arabic 0-9 — NEVER Devanagari digits (०१२३४५६७८९)"** |
-| 15 | **Invented gibberish words in the artwork** | Image models render short Devanagari strings well and paragraphs never — asking for article text yields broken non-words (`काष्पाय रलेग का बाझाग`). Two rules: any word actually shown must be a **short real Hindi phrase (3–6 words) taken from the day's news** — a photo caption, a sub-headline — and all body copy must be specified as **FEATURELESS GREY BARS, explicitly NOT letterforms**. Never ask for paragraphs of text |
+| 15 | **Invented gibberish words, and filler generally** | Image models render short Devanagari strings well and paragraphs never — asking for article text yields broken non-words (`काष्पाय रलेग का बाझाग`). Substituting grey placeholder bars fixes the gibberish but looks like filler, which is worse. **The answer is less, not different: no body copy at all.** A print page carries a photo, its caption, and at most one short sub-headline — every word real Hindi from the day's news — and the rest is bare paper. No text columns, no grey bars, no charts, no dummy blocks |
 | 16 | Stray blocks land in the headline column | Page furniture (boxed columns, infographics, captions) drifts left and reads as a redaction block over the text. **Confine ALL furniture to the right third; the left is clean ground** |
 
 **AVOID also:** clutter, poor contrast, rainbow palettes, sparkles, lens flare, glow.
@@ -399,7 +397,7 @@ ART: [SUBJECT scene, from 4.3 — any source: a commodity of the day at any stag
 LAYOUT: all text left-aligned on one rag at the left margin; right third stays clear of text.
 Top-left: [accent] pill with "किराना समाचार", beside it "[DD माह YYYY]".
 Headline, huge heavy [colour] Devanagari, two lines: "[LINE 1]" / "[LINE 2]".
-Below it in [accent]: "[HERO LINE — one price move, ALWAYS with its unit, written कुंतल not क्विंटल]".
+Below it in [accent]: "[HERO LINE — one price move, ALWAYS with its unit, e.g. प्रति क्विंटल]".
 Below that, left-aligned [accent] pill: "पूरी रिपोर्ट पढ़ें →".
 No tiles, no cards, no side panels.
 
@@ -407,7 +405,7 @@ BOTTOM STRIP, full width across the very bottom: solid RED box "आज की �
 "[c1]" [colour1] [up/down], "[c2]" [colour2] [up/down], "[c3]" [colour3] [up/down], "[c4]" [colour4] [up/down], "[c5]" [colour5] [up/down], "[c6]" [colour6] [up/down].
 Indian mandi convention: RED arrow = up = rising, GREEN arrow = down = falling. Do not invert.
 
-Heavy geometric Devanagari, correct conjuncts. Numerals must be Arabic 0-9 — NEVER Devanagari digits (०१२३४५६७८९). Any word shown inside the artwork must be a short real Hindi phrase from the day's news; body copy is featureless grey bars, NOT letterforms. No logos or watermarks.
+Heavy geometric Devanagari. Spell every word correctly with correct conjuncts, exactly as given above. Numerals must be Arabic 0-9 — NEVER Devanagari digits (०१२३४५६७८९). Any word shown inside the artwork must be a short real Hindi phrase from the day's news, and there must be NO filler text of any kind. No logos or watermarks.
 ```
 
 Fill the ticker colours **per item** from the day's directions — never leave them to the model.
