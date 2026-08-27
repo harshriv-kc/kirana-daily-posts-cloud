@@ -173,40 +173,232 @@ CTA Button: [Trending: "पूरी रिपोर्ट पढ़ें →" 
 
 ---
 
-### 4. Samachar Post
+### 4. Samachar Post — THE ROTATING ART SYSTEM
 
-**Dimensions:** 1920×1080 landscape
+**Dimensions:** 1920×1080 landscape. Never square, never portrait, never a circular badge.
 
-#### PART 1 — Common Design Elements (copy verbatim)
+Every other image in this file is a fixed template. **Samachar is not — it is composed fresh
+every single day.** What follows is a method, not a menu. A shopkeeper scrolling the feed for a
+month must never see the same picture twice, while every post is still instantly recognisable as
+किराना समाचार within half a second.
+
+That is achieved by holding the **CHASSIS** rigid and letting the **ART** change underneath it.
+The art is chosen on two independent axes:
+
+- **SUBJECT** — what the picture actually shows. Drawn from anywhere in the day's market, and
+  free to show no commodity at all. Open by design.
+- **TREATMENT** — the medium and art direction. Rotates, with a 14-day cooldown.
+
+SUBJECT and TREATMENT are chosen independently. Their product is what keeps the feed alive.
+**Never pick a generic "commodity background" again.**
+
+---
+
+#### 4.1 THE CHASSIS — five elements, mandatory, never omitted
+
+These five appear on EVERY Samachar image regardless of art direction. If a treatment is so
+strong that it swallows them, **the treatment is wrong, not the chassis.** (This is a real
+observed failure: heavy full-bleed poster styles cause the generator to drop the tag, ticker and
+CTA and render a pretty poster with no furniture. See 4.6.)
+
+1. **DATE + TAG** — a small pill reading `किराना समाचार`, with the posting date beside it
+   (`27 अगस्त 2026`). Top-left.
+2. **HEADLINE** — 2 lines, huge, heavy Devanagari. The day's story in ≤18 characters per line.
+3. **HERO LINE** — exactly ONE number: the day's single biggest price move, as a self-contained
+   sentence (`चीनी में 900 रुपये की गिरावट`). Accent colour.
+4. **CTA** — a pill reading `पूरी रिपोर्ट पढ़ें →`.
+5. **BOTTOM STRIP** — a full-width band across the very bottom, styled like a live TV news
+   ticker: a solid RED flag box reading `आज की मंडी`, then 5–6 commodities, each as
+   `[name] [triangle arrow]`. **This is the ONLY place direction data appears.**
+
+**Logo is optional.** If the brand mark can sit cleanly at the right end of the bottom strip or
+the top-right corner, include it. If it crowds anything, drop it — never at the cost of the five.
+
+**Do NOT add a row of commodity tiles/cards.** An earlier version carried both tiles and a
+ticker, which said the same thing twice and ate the middle of the frame. The ticker alone.
+
+---
+
+#### 4.2 LANDSCAPE LAYOUT GRID (1920×1080) — non-negotiable
+
+Landscape is much wider than the drafts were tested at, so positioning is explicit. The frame
+splits into a **text column on the left** and a **hero art zone on the right**.
 
 ```
-Create a highly clickable, eye-catching landscape thumbnail (1920x1080px) for a daily commodity news (Samachar) post in Hindi:
-
-REQUIRED CONTENT:
-- Background: High-quality, aesthetic image of relevant commodities (artistic shots of pulses, grains, spices, oils, or a clean market scene)
-- Date and post type text (smaller emphasis, top banner)
-- Main Headline (large, prominent, listing key commodities affected)
-- Call-to-action button with arrow
-
-DESIGN GOAL:
-- Color scheme harmonious with natural commodity colors (warm earth tones, vibrant spice colors)
-- Typography hierarchy that makes headline pop immediately
-- Text box styling (translucent overlays, solid banners, glassmorphism — ensure readability)
-- Proper contrast for all Hindi text
-
-AVOID: Cluttered designs, poor text contrast, revealing specific prices in text overlay
+x=0 ─────────────── 1100 ──────────────── 1920
+│  TEXT COLUMN (left-aligned)   │  HERO ART ZONE      │  y=0
+│  ┌ tag + date       y  90-150 │                     │
+│  │                            │   the commodity     │
+│  ├ HEADLINE line 1 y 250-430  │   subject lives     │
+│  ├ HEADLINE line 2 y 430-610  │   here, unobstructed│
+│  ├ HERO LINE       y 650-720  │   and never covered │
+│  └ CTA pill        y 780-860  │   by text           │
+│                                                     │  y=960
+├───────────── BOTTOM STRIP (full bleed) ─────────────┤
+└─────────────────────────────────────────────────────┘  y=1080
 ```
 
-#### PART 2 — Variable Data
+- **Safe margin 80px** on all four edges. No text or arrow closer than that to any edge.
+- **Everything in the text column is LEFT-ALIGNED on a single rag at x=80.** Not centred, not
+  justified, not mixed. One hard left edge is what makes wildly different art directions still
+  feel like one publication — and at feed-thumbnail size a single left rag is read fastest.
+  The CTA sits on that same rag; do not float it right.
+- **Bottom strip is 120px tall (y 960→1080), full bleed edge to edge**, and is the only element
+  that touches the canvas edges.
+- **Hero art zone (x 1100→1920) must stay clear of all text.** The subject's focal point belongs
+  here, roughly on the right third.
+- **Scrim:** a smooth LEFT-TO-RIGHT linear gradient — dark at x=0, fully transparent by x≈1250 —
+  plus a slight darkening just above the bottom strip. It must only darken; the art stays sharp
+  and in focus underneath. **NO gaussian blur, NO frosted glass, NO depth-of-field blur.**
+- **Absolutely NO circular, oval, arch or rounded-card mask, and no vignette.** The composition
+  is a full-bleed rectangle to all four corners. *(The square-preview generator biases toward a
+  circular badge crop; at 1920×1080 this must never appear. State the ban in every prompt.)*
+
+Treatments with a light ground (newsprint, riso, screen print) use dark text on the paper and
+skip the scrim — the grid above still governs positions.
+
+---
+
+#### 4.3 AXIS 1 — SUBJECT (open by design)
+
+**Do NOT hard-bind the picture to the Samachar hero commodity.** That is one source among
+several, and defaulting to it would collapse this axis to a single idea and make every image a
+literal illustration of the headline. The subject only has to feel like *the day's market* — it
+does not have to match the headline, and it need not show a commodity at all.
+
+**Step A — pick the SOURCE (rotate this too):**
+
+| Source | What it shows |
+|---|---|
+| **नायक जिंस** | the hero commodity's world — one option, not the default |
+| **कोई और जिंस** | any *other* commodity that moved today — a तेज/मंदा card, a रुझान line, a quiet mover the body mentions |
+| **कई जिंसें एक साथ** | an ensemble of the day's movers together — sacks, bowls, heaps side by side |
+| **व्यापार** | the trade itself — trade floor, auction, weighing, ledger and cash box, hands haggling; no single commodity foregrounded |
+| **दुकान** | the retail side — kirana counter, shelves, jars, the buyer |
+| **रास्ता** | the route — trucks, mandi gate, porters, warehouse doors |
+| **मौसम / अवसर** | the context — monsoon over fields, festival stocking, harvest calendar |
+| **कोई जिंस नहीं** | no commodity at all — a pure typographic, material or print-craft composition where the TREATMENT is the image (a newspaper page, a riso poster, a paper-cut) |
+
+**Step B — if a commodity *is* shown, pick its stage:** खेत/फसल (standing crop, harvest,
+threshing) · मिल/कारखाना (crushing, refining, packing, silos) · मंडी (open sacks, weighing) ·
+ढुलाई (trucks, gates, porters) · गोदाम/सुखाई (drying yards, stacked bags) · दुकान (shelves,
+counter) · मैक्रो (extreme close-up of the raw material).
+
+**Rules**
+
+1. **Rotate the SOURCE, not just the treatment.** If the hero commodity is the source more than
+   roughly a third of the time, the axis is being under-used. `कोई जिंस नहीं` and `व्यापार`
+   days are just as valid as a harvest day.
+2. The subject **may contradict the headline's lead** — a चीनी-led day can perfectly well show a
+   wheat harvest, a full mandi floor, or nothing but a printed page. Only the mood must match.
+3. Pick what will actually make a beautiful frame that day, then let the ledger stop repeats.
+   Do not derive it mechanically from any single field.
+4. **Hard exclusion carries over:** सोना-चांदी / सर्राफा is never the subject, even when bullion
+   moves most.
+
+---
+
+#### 4.4 AXIS 2 — TREATMENT (rotates, and must be INVENTED each time)
+
+Treatments are grouped into families. **The families are scaffolding, not a list to cycle
+through.** Each day, pick a family that respects the cooldown, then *invent a specific new
+treatment inside it* — a named, concrete art direction with its own palette, medium and mood.
+"Newspaper" is a family; *which* newspaper is a fresh decision every time.
+
+| Family | Invent within it, e.g. |
+|---|---|
+| **दस्तावेजी फोटो** | golden-hour documentary · blue-hour cinematic · monsoon overcast · harsh noon high-contrast · lantern-lit night shift |
+| **छपाई / प्रिंट** | 1960s letterpress b/w · 1980s tabloid with one spot colour · Hindi broadsheet on cream stock · microfiche archive · smudged proof sheet |
+| **चित्रण** | two-colour risograph · mid-century screen print · woodcut/linocut · ink-wash brush · flat geometric vector · truck-art folk motif |
+| **पदार्थ / मैक्रो** | duotone crystal macro · light-table backlit grain · soft-shadow flat-lay on linen · wet-plate texture |
+| **पुरालेख** | sepia archival · faded photo-album print · hand-tinted postcard · vintage almanac plate |
+| **रचित** | paper-cut diorama · miniature tabletop set · long-exposure light trails at a mandi gate |
+
+**Rules for the rotation**
+
+1. **14-day cooldown on the specific treatment**, and **no back-to-back family.** Yesterday
+   photographic → today print, illustration, macro, archival or constructed.
+2. **Never repeat a specific treatment already used in the last 14 days**, even inside an
+   allowed family. Newsprint this week must be a visibly different newspaper next time — change
+   the era, the stock, the spot colour, the halftone coarseness.
+3. **Aim for roughly half photographic, half non-photographic across any 14-day window.** An
+   all-photo fortnight reads as one texture; an all-illustration fortnight stops feeling like news.
+4. **Invent at least one treatment per week that is not in the table above.** The table is a
+   floor, not a ceiling. Write the invented name into the ledger so it enters the cooldown.
+5. The treatment must **serve the story's mood.** A crash is not cheerful. A shortage is not
+   sunny. Match the palette to the day's news.
+
+---
+
+#### 4.5 LEDGER — new dedup axes
+
+Add to the `kirana-used-log.json` run entry, alongside the existing fields:
+
+- `samachar_art_subject` — the source chosen, plus the stage if a commodity was shown
+  (e.g. `कोई और जिंस / गेहूं / खेत`, `व्यापार / मंडी`, `कोई जिंस नहीं`). Rotate the SOURCE
+  across the window, not only the stage — the hero commodity should not be the source more than
+  about a third of the time.
+- `samachar_art_treatment` — the **specific invented treatment name**, not the family
+  (e.g. `1980s tabloid spot-red halftone`, not `print`)
+
+Before drafting, read the last 14 runs and drop every treatment and family used. These two are
+dedup axes exactly like the Samachar hero and the trending themes — a repeat is a defect.
+
+---
+
+#### 4.6 FAILURE MODES — all observed in testing, all must be defended against
+
+| # | Failure | Defence (state it in the prompt every time) |
+|---|---|---|
+| 1 | Circular/oval badge crop, vignette | Ban circular/oval/arch masks and vignettes explicitly; demand full-bleed rectangle to all four corners |
+| 2 | Heavy art style swallows the chassis — tag/ticker/CTA silently dropped | List the five chassis elements as mandatory; confine the art to the hero zone; draw the chassis as flat UI *on top* |
+| 3 | **Ticker arrow colours inverted to the Western scheme** | Give the colour for **each item individually**, and state the Indian rule twice: RED = up = तेज, GREEN = down = मंदा |
+| 4 | Devanagari conjuncts break (क्विंटल → किवंटल) | Keep conjunct-heavy words OUT of image text. **Never put क्विंटल in the image** — the unit lives in the post body. Prefer simple words; demand correct conjunct rendering |
+| 5 | Real packaging with legible brand text leaks into photos | Ban packets, wrappers, signage, hoardings, banners, number plates and any readable text inside the photograph |
+| 6 | Generator times out (>60s) on long prompts | **Keep the whole image_prompt under ~1800 characters.** Compact phrasing. If it times out, shorten — do not resend the same length. **But shorten the ART paragraph ONLY — see the prompt budget below** |
+| 6b | **Compressing the prompt silently kills the chassis** | Observed: trimming a prompt to beat the timeout produced a gorgeous photo with zero text on it. The CHASSIS, LAYOUT and BOTTOM STRIP blocks are load-bearing — never compress them to save characters. Cut adjectives from the art description instead |
+| 6c | A strong full-frame photograph overrides the UI | The richer and wider the photographic subject, the likelier the generator treats the brief as "make this photo" and forgets the furniture. For photographic treatments, state the art as occupying the RIGHT THIRD with a clear text field at left, and keep the chassis wording verbatim and complete |
+| 7 | Small icons in the ticker render only ~half the time | Icons are **optional**; the arrow carries direction. Never let a missing icon break the row |
+| 8 | Hero number reads as a rate without its unit | Hero line must be a complete, honest sentence. Never fabricate a number — it comes from the PDF |
+| 9 | Text overflow at thumbnail size | Headline ≤2 lines, ≤18 chars per line. Ticker ≤6 items. If the hero commodity name is long, drop a ticker item rather than shrink type |
+| 10 | Bullion appears in the art | सोना-चांदी never as subject, headline or ticker icon (body text is still fine) |
+
+**AVOID also:** clutter, poor contrast, rainbow palettes, sparkles, lens flare, glow.
+
+**Amended price rule (supersedes the old "no specific prices" line):** the image may carry
+**exactly ONE number — the hero price move.** That number is the hook. No rate table, no
+per-commodity levels, no absolute prices in the ticker; those stay in the post body so the click
+still pays off.
+
+---
+
+#### 4.7 ASSEMBLED PROMPT — fill and keep under ~1800 characters
+
+**Prompt budget.** Of that ~1800, spend roughly: ART ≤450 chars, LAYOUT ≈550, BOTTOM STRIP ≈450,
+closing rules ≈150. If you must cut, **cut the ART sentence and nothing else** — a thinner art
+description yields a plainer picture, whereas a thinner chassis yields no text at all (see 6b).
+Keep the LAYOUT and BOTTOM STRIP wording verbatim.
 
 ```
-CONTEXT: [Paste entire post_description — guides background image selection]
+Hindi market news thumbnail, 1920x1080 landscape, Devanagari script only, no English or Latin letters.
 
-CONTENT TO DISPLAY:
-Date & Type: [Extract before pipe '|' from post_title, e.g., "02 फरवरी: किराना समाचार"]
-Main Headline: [Extract after pipe '|' from post_title, e.g., "तूर दाल उछली, शक्कर मजबूत, सोना टूटा"]
-CTA Button: पूरी रिपोर्ट पढ़ें →
+ART: [SUBJECT scene, from 4.3 — any source: a commodity of the day at any stage, the trade itself, the shop, the route, the season, or no commodity at all] rendered as [INVENTED TREATMENT, from 4.4 — medium, palette, mood]. Full-bleed rectangle to all four corners. NO circular or oval mask, NO vignette, NO rounded card. Subject sits in the right third. [Scrim line: dark left-to-right gradient fading out by mid-frame, darkens only — photo stays sharp, no blur.] No packets, signage, banners or readable text inside the artwork.
+
+LAYOUT: all text left-aligned on one rag at the left margin; right third stays clear of text.
+Top-left: [accent] pill with "किराना समाचार", beside it "[DD माह YYYY]".
+Headline, huge heavy [colour] Devanagari, two lines: "[LINE 1]" / "[LINE 2]".
+Below it in [accent]: "[HERO LINE — one price move, no unit word]".
+Below that, left-aligned [accent] pill: "पूरी रिपोर्ट पढ़ें →".
+No tiles, no cards, no side panels.
+
+BOTTOM STRIP, full width across the very bottom: solid RED box "आज की मंडी", then names with triangle arrows —
+"[c1]" [colour1] [up/down], "[c2]" [colour2] [up/down], "[c3]" [colour3] [up/down], "[c4]" [colour4] [up/down], "[c5]" [colour5] [up/down], "[c6]" [colour6] [up/down].
+Indian mandi convention: RED arrow = up = rising, GREEN arrow = down = falling. Do not invert.
+
+Heavy geometric Devanagari, Arabic numerals, correct conjuncts. No logos or watermarks.
 ```
+
+Fill the ticker colours **per item** from the day's directions — never leave them to the model.
 
 ---
 

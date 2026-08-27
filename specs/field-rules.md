@@ -110,7 +110,15 @@ Rujhan 4-card row. Pick a non-bullion commodity for every image background and h
 covered in the text body). This is in addition to the Samachar-hero bullion ban above.
 
 ### Samachar / Trending News / Schemes (1920×1080 landscape)
-- Samachar: contextual commodity background, date+type, main headline, CTA "पूरी रिपोर्ट पढ़ें →".
+- **Samachar is NOT a fixed template — it is composed fresh daily.** Read
+  `kirana-posts-media-and-api.md` → "4. Samachar Post — THE ROTATING ART SYSTEM" before drafting
+  it. In short: a rigid 5-part chassis (date+tag, 2-line headline, ONE hero price move, CTA,
+  bottom news-ticker strip) over art chosen on two independent axes — SUBJECT, which is **open**
+  (the hero commodity is only one source; any other commodity of the day, an ensemble, the trade
+  itself, the shop, the route, the season, or no commodity at all are equally valid — rotate the
+  source) and TREATMENT, which must be a *newly invented* art direction each day under a 14-day
+  cooldown. All text left-aligned on one
+  rag; right third reserved for the art; no circular/oval mask; exactly one number in the image.
 - Trending News 1 & 2: relevant contextual background, two-line headline, CTA based on story type.
 - Schemes: **1920×1080 landscape** (same size as Trending News and Samachar), CTA "अभी आवेदन करें →".
 
@@ -161,7 +169,9 @@ See `kirana-posts-content.md` → "WHICH PAPER TO USE".
 
 Before drafting, retrieve yesterday's run (conversation_search "kirana posts" / recent_chats) and
 make today differ on: Samachar hero, oil direction, the dal/sugar pick, the Other pick, the rujhan
-quiz commodity, both trending topics, and the scheme. **For trending news, keep a 7-day rolling
+quiz commodity, both trending topics, the scheme, **and the Samachar art axes
+(`samachar_art_subject`, `samachar_art_treatment`) — 14-day cooldown on the specific treatment,
+and never the same treatment family two days running.** **For trending news, keep a 7-day rolling
 ledger of used themes** (scam, monsoon, FMCG, etc.) and skip any evergreen theme already used in the
 last week unless it's genuinely breaking that day — this is what stops the daily-scam / repeat-monsoon
 pattern. Keep a rolling memory of recently used schemes
