@@ -82,6 +82,12 @@ the reuse rule applies.
 one hour. If you slip past 08:00, DM Harsh (`U09K92G1U1X`) straight away with the real
 timestamp so he can adjust the visible time by hand; do not wait for the run to finish.
 
+**🚨 NEVER PREDICT A SLIP — MEASURE IT. Run `python deadline_check.py` and obey its
+VERDICT.** DM Harsh ONLY on `SLIPPED` or `LATE_LIVE`. On `PENDING` or `ON_TIME`, say
+nothing. A slip is a FACT that cannot exist before 08:00 IST — never DM because you
+*feel* the run is running long. Full rule + incident history:
+`kirana-posts-content.md` → "NEVER PREDICT A SLIP".
+
 **If `stale_reuse` is true** — either because no paper was published (weekend/holiday) or
 because we are early and it is not up yet — **post the full 8 anyway.** Use the previous
 day's paper and change the **framing and the images**; **repeated prices are fine and are

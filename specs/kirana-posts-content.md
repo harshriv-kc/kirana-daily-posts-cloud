@@ -72,6 +72,43 @@ worse, **be late**. A late post is a five-second fix for Harsh; a wrong price is
 - This late-run DM is separate from the failure alert below; **a late run is not a failed
   run**, it just needs the visible time nudged.
 
+#### 🚨 NEVER PREDICT A SLIP — the six false alarms
+
+**The single most repeated defect in this routine's history.** On **2026-08-20, 08-21,
+08-22, 08-23, 08-24 and 08-30** the run DM'd Harsh saying सोया तेल would miss the 08:00
+slot, and then minutes later reported it live comfortably on time — six false alarms in
+eleven days, each needing a correction DM. On 08-31 it was nearly sent a seventh time:
+the agent announced "Time check: 07:33 IST … I alert Harsh the moment I know I've
+slipped" when the clock actually read **07:12**.
+
+The cause is always identical: **the agent ESTIMATED elapsed wall-clock time instead of
+READING a clock.** Tool calls feel like minutes but take seconds, so the running estimate
+drifts 20–40 minutes ahead of reality and the agent "knows" it has slipped while it is in
+fact still half an hour early.
+
+Rules, non-negotiable:
+
+1. **You have no sense of time. Never state or act on an estimated clock time.** Every
+   sentence of the form "it is now roughly HH:MM" is banned unless it came from a command
+   you just ran in this turn.
+2. **`python deadline_check.py` is the ONLY authority.** It reads the real IST clock, the
+   poster state file and the poster log, and prints a VERDICT:
+   - `PENDING` — before 08:00, सोया तेल not live yet → **DO NOT DM.** Keep working.
+   - `ON_TIME` — सोया तेल published before 08:00 → **DO NOT DM.**
+   - `LATE_LIVE` — published after 08:00 → **DM Harsh** with the printed timestamp.
+   - `SLIPPED` — past 08:00 and still not live → **DM Harsh NOW.**
+3. **Only `SLIPPED` and `LATE_LIVE` authorise a DM.** A slip is a FACT about the past, not
+   a forecast; it cannot be true before 08:00 IST. "The run feels long" is not evidence.
+4. Being behind schedule is **not** a reason to DM — it is a reason to keep working. The
+   operator rule stands: late-but-right beats on-time-but-worse, and a late run is not a
+   failed run.
+5. If you catch yourself reaching for the Slack tool over timing, run `deadline_check.py`
+   first and obey the verdict.
+
+**Do not record this lesson only in the ledger `_note`.** That is why it recurred: the
+08-24 run wrote the exact fix into `_note`, but `_note` is read only for dedup axes, never
+as instruction. Behavioural rules belong in these spec files, which STEP 0 loads.
+
 ### STALE-PAPER REUSE — post anyway, reframe, SAME PRICES ARE FINE
 
 **OPERATOR RULE (non-negotiable): a missing new paper NEVER means a missing post day.
