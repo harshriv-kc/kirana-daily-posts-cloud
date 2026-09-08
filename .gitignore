@@ -8,3 +8,4 @@ __pycache__/
 build_*.py
 poster_*.out
 poster_*.log
+samachar_image_prompt_*.txt
