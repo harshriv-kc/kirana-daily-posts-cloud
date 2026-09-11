@@ -36,7 +36,24 @@ the end of every run**, or the next day loses its memory and posts repeat.
 7. Write `request_body.json`; validate via `emit_posts.validate`
 8. Append today's run to `kirana-used-log.json`
 9. `python post_items.py` (poster — final action)
-10. `git add kirana-used-log.json && git commit && git push` (persist the ledger)
+10. `python post_items.py --links` → the Slack asset-links block for #inhouse-content
+11. `git add kirana-used-log.json && git commit && git push` (persist the ledger)
+
+## Daily asset links (`--links`)
+The poster records, per item, `item_id`, `d2r_link`, `expanded_image_url`,
+`collapsed_image_url` and the whole `data[0]` object (under `response`) into
+`post_state_<date>.json` the moment each response arrives. `post_items.py --links`
+renders those into the exact block posted to **#inhouse-content** — one line per
+post, in posting order, CDN query params stripped. It sends nothing, so it is safe
+to run after the poster has finished.
+
+A post that returns no image URLs simply omits those two links (normal — do not
+flag it); a post that did not publish is written as `❌ failed` with no links.
+
+> Before 2026-09-11 `extract_ids()` kept only `item_id`/`d2r_link` and discarded
+> the rest of the response, so the thumbnail URLs were unrecoverable and the daily
+> Slack post could carry D2R links only. Keep the whole `data[0]` object — a field
+> added server-side must never be lost again.
 
 ## Deps
 Python 3, `requests`, `pymupdf` (fitz). Network to `vyaparkesari.com` and

@@ -19,15 +19,24 @@ So this script treats "sent" — not "succeeded" — as the irreversible act:
 
 That makes a duplicate structurally impossible rather than merely unlikely.
 
-DESIGN RULE #2 — NEVER LOSE AN ITEM ID WE WERE GIVEN.
------------------------------------------------------
+DESIGN RULE #2 — NEVER LOSE ANYTHING THE BACKEND GAVE US.
+---------------------------------------------------------
 The old script only wrote its results file after all 8 items finished, so when
 the process was killed mid-run the itemID of the already-published सोया तेल post
 was lost with it. Every result is now persisted the moment it arrives.
 
+The same rule was being broken more quietly until 2026-09-11: extract_ids()
+picked out only item_id/d2r_link and threw the rest of the response away, so the
+thumbnail URLs (expanded_image_url / collapsed_image_url) the backend had
+already handed us were unrecoverable, and the daily Slack post could only carry
+D2R links. Those two URLs are now captured as first-class fields, AND the whole
+data[0] object is kept under "response" so a field added server-side tomorrow is
+never lost again.
+
 Usage:
     python post_items.py                      # send everything not yet attempted
     python post_items.py --status             # print the ledger, send nothing
+    python post_items.py --links              # print the Slack asset-links block
     python post_items.py --force "Samachar"   # deliberate re-send, human-checked
 """
 import argparse
@@ -75,6 +84,13 @@ def save_state(state):
     os.replace(tmp, STATE_FILE)
 
 
+ENTRY_FIELDS = {
+    "status": ST_PENDING, "attempts": 0, "item_id": None, "d2r_link": None,
+    "expanded_image_url": None, "collapsed_image_url": None,
+    "response": None, "detail": None, "elapsed": None,
+}
+
+
 def load_state(posts):
     if os.path.exists(STATE_FILE):
         with open(STATE_FILE, "r", encoding="utf-8") as f:
@@ -84,31 +100,95 @@ def load_state(posts):
 
     for i, p in enumerate(posts, start=1):
         name = p.get("post_name", f"item{i}")
-        state["items"].setdefault(name, {
-            "order": i, "status": ST_PENDING, "attempts": 0,
-            "item_id": None, "d2r_link": None, "detail": None, "elapsed": None,
-        })
+        entry = state["items"].setdefault(name, {"order": i})
+        # Also back-fills fields added in a later version onto an older state
+        # file, so a mid-run resume never KeyErrors on a new key.
+        for k, v in ENTRY_FIELDS.items():
+            entry.setdefault(k, v)
+        entry.setdefault("order", i)
     return state
 
 
+def _clean_url(value):
+    """Normalise a URL the backend handed us.
+
+    Strips Slack-style <...> wrapping and surrounding whitespace. CDN query
+    params are deliberately NOT stripped here — this is the archival record;
+    trimming for display happens in slack_links().
+    """
+    if not isinstance(value, str):
+        return None
+    v = value.strip().lstrip("<").rstrip(">").strip()
+    return v or None
+
+
 def extract_ids(resp_data):
-    """Pull (item_id, d2r_link, ok, detail) out of a postAutomation response body.
+    """Pull (item_id, d2r_link, ok, detail, images, raw) out of a response body.
 
     HTTP 200 is NOT proof of creation: the backend answers 200 with
     success:false when the downstream News API fails.
+
+    `images` is a dict of the two thumbnail URLs (either may be None — some
+    posts genuinely come back without them, which is normal and not an error).
+    `raw` is the whole data[0] object, kept so that a field we do not yet know
+    about is still on disk tomorrow.
     """
+    empty = {"expanded_image_url": None, "collapsed_image_url": None}
     posts = (resp_data or {}).get("data")
     if isinstance(posts, list) and posts:
         p = posts[0]
         ok = bool(p.get("success"))
-        link = p.get("d2r_link") or p.get("link") or ""
+        link = _clean_url(p.get("d2r_link") or p.get("link")) or ""
         item_id = p.get("itemId") or p.get("item_id") or p.get("id")
         if not item_id and link:
             item_id = link.rstrip("/").rsplit("/", 1)[-1]  # .../article/view/<uuid>
-        return item_id, link, ok, (None if ok else (p.get("error") or "success=false"))
+        images = {
+            # snake_case is what the API returns today; the camelCase spellings
+            # are accepted defensively because itemId already arrives camelCase.
+            "expanded_image_url": _clean_url(
+                p.get("expanded_image_url") or p.get("expandedImageUrl")),
+            "collapsed_image_url": _clean_url(
+                p.get("collapsed_image_url") or p.get("collapsedImageUrl")),
+        }
+        detail = None if ok else (p.get("error") or "success=false")
+        return item_id, link, ok, detail, images, p
     if (resp_data or {}).get("success") is False:
-        return None, None, False, str((resp_data or {}).get("message") or "success=false")
-    return None, None, False, "unrecognised response shape"
+        return (None, None, False,
+                str((resp_data or {}).get("message") or "success=false"), empty, None)
+    return None, None, False, "unrecognised response shape", empty, None
+
+
+def _display_url(url):
+    """CDN query params are dropped for display — the clean .webp opens fine and
+    it keeps the Slack message well under the 5000-char limit."""
+    return url.split("?", 1)[0] if url else None
+
+
+def slack_links(state, posts):
+    """Render the STEP 9b asset-links block for #inhouse-content.
+
+    One line per post carrying all of that post's assets, in posting order.
+    A post with no image URLs simply omits those links (normal, not flagged);
+    a post that did not publish is written as failed with no links.
+    """
+    order = sorted(state["items"].items(), key=lambda kv: kv[1]["order"])
+    n_live = sum(1 for _, it in order if it["status"] == ST_PUBLISHED)
+    day = datetime.strptime(state.get("date", TODAY), "%Y-%m-%d").strftime("%-d %b")
+
+    lines = [f"**📰 Daily Posts · {day}** — {n_live}/{len(posts)} live"]
+    for name, it in order:
+        if it["status"] != ST_PUBLISHED:
+            lines.append(f"{it['order']}. {name} — ❌ failed")
+            continue
+        parts = []
+        if it.get("d2r_link"):
+            parts.append(f"[D2R]({_display_url(it['d2r_link'])})")
+        for label, key in (("exp", "expanded_image_url"),
+                           ("col", "collapsed_image_url")):
+            if it.get(key):
+                parts.append(f"[{label}]({_display_url(it[key])})")
+        lines.append(f"{it['order']}. {name} — " + " · ".join(parts))
+    return "\n".join(lines)
 
 
 def report(state, posts):
@@ -122,6 +202,11 @@ def report(state, posts):
         elif it.get("detail"):
             line += f" ({it['detail']})"
         log(line)
+        imgs = [f"{lbl}={it[k]}" for lbl, k in (("exp", "expanded_image_url"),
+                                                ("col", "collapsed_image_url"))
+                if it.get(k)]
+        if imgs:
+            log(" " * 44 + "  ".join(imgs))
 
     published = [n for n, i in order if i["status"] == ST_PUBLISHED]
     unknown = [n for n, i in order if i["status"] in (ST_SENT, ST_UNKNOWN)]
@@ -153,6 +238,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--status", action="store_true",
                     help="print the ledger and exit without sending anything")
+    ap.add_argument("--links", action="store_true",
+                    help="print the Slack asset-links block and exit without "
+                         "sending anything")
     ap.add_argument("--force", action="append", default=[], metavar="POST_NAME",
                     help="re-send one item whose outcome was unknown. Only after "
                          "checking the feed — this CAN create a duplicate.")
@@ -171,6 +259,10 @@ def main():
         request_body = [request_body]
 
     state = load_state(request_body)
+
+    if args.links:
+        print(slack_links(state, request_body))
+        return
 
     if args.status:
         LOG_FILE = os.devnull
@@ -233,7 +325,11 @@ def main():
                 entry["detail"] = f"HTTP {response.status_code}"
                 log(f"REJECTED {name}: HTTP {response.status_code} ({elapsed:.1f}s)")
             else:
-                item_id, link, ok, detail = extract_ids(resp_data)
+                item_id, link, ok, detail, images, raw = extract_ids(resp_data)
+                # Keep what we were given even on rejection — a REJECTED item can
+                # still carry a diagnostic payload worth reading afterwards.
+                entry["response"] = raw
+                entry.update(images)
                 if ok:
                     entry["status"] = ST_PUBLISHED
                     entry["item_id"] = item_id
@@ -241,6 +337,13 @@ def main():
                     entry["detail"] = None
                     log(f"PUBLISHED {name} ({elapsed:.1f}s) itemID={item_id}")
                     log(f"          {link}")
+                    for label, key in (("exp", "expanded_image_url"),
+                                       ("col", "collapsed_image_url")):
+                        if images[key]:
+                            log(f"          {label}: {images[key]}")
+                    if not (images["expanded_image_url"]
+                            or images["collapsed_image_url"]):
+                        log("          (no image URLs returned — normal for some posts)")
                 else:
                     entry["status"] = ST_REJECTED
                     entry["detail"] = detail
