@@ -6,6 +6,16 @@
 
 Every post MUST include an `image_prompt` field. The API uses this to generate AI thumbnails.
 
+> **🖼 A FAILED IMAGE DOES NOT FAIL THE POST — AND THE POSTER NEVER SEES IT.**
+> `postAutomation` catches any image error, records it in `image_generation_logs`, then
+> continues "with default attachment instead of failing the entire post". The post goes
+> live with a placeholder, the backend returns `success: true`, and `post_items.py`
+> reports PUBLISHED and exits 0. The ONLY record is `image_generation_logs`.
+> **After every run you must run `image_reconcile.sql` (STEP 8c) and DM Harsh
+> (`U09K92G1U1X`) if anything failed.** Between 2026-09-04 and 2026-09-18, 9 of 15 days
+> shipped a placeholder thumbnail and no run noticed. Full rule:
+> `kirana-posts-content.md` → "MANDATORY STEP 8c — IMAGE RECONCILE".
+
 **HARD EXCLUSION — सोना-चांदी / सर्राफा (bullion: gold, silver, गिन्नी) must NEVER appear in ANY
 `image_prompt` or `pn_image_prompt`:** not as the background photo subject, not as the commodity
 name / headline text shown in the image, and not as one of the Rujhan 4-card thumbnail rows. Even
@@ -514,6 +524,15 @@ Style:
 ### Conditional Fields
 - `commodity` + `direction` — ONLY on: सोया तेल, दाल/शक्कर, Other commodities, रुझान
 - `pn_image_prompt` — ONLY on: Samachar, दाल/शक्कर, रुझान, TN1, TN2
+
+### Response fields — reading image success correctly
+`expanded_image_url` / `collapsed_image_url` come from postAutomation's `duoImageResult`
+and are spread into the response **only when the PN duo images succeeded**. Therefore:
+- **No `exp`/`col` on सोया तेल, Other commodities, Pan India Schemes** — expected, they
+  carry no `pn_image_prompt`.
+- **No `exp`/`col` on Samachar, दाल/शक्कर, रुझान, TN1, TN2** — **a FAILURE.** Alert.
+There is **no response field at all** for the post thumbnail, so a failed `image_prompt`
+is invisible here; only `image_generation_logs` records it (STEP 8c).
 
 ### Post Names (exact values)
 `Samachar`, `सोया तेल`, `दाल/शक्कर`, `Other commodities`, `रुझान`, `Pan India Trending News 1`, `Pan India Trending News 2`, `Pan India Schemes`

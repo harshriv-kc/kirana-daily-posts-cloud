@@ -164,11 +164,16 @@ Alert on any of these:
 | No paper found at all | `fetch` returns `ok: false` (exit 2) |
 | Posts could not be drafted or validated | `validate()` keeps raising after fixes |
 | **Any item failed to publish** | `post_items.py` exits **non-zero** |
+| **Any image failed to generate** | **STEP 8c image reconcile — see below. An `image_generation_logs` row with `success = 0`, OR a `pn_image_prompt` post missing its `pn_expanded`/`pn_collapsed` pair. The poster CANNOT detect this; it exits 0 and reports PUBLISHED regardless.** |
 | Ledger push to `main` failed | `git push` still failing after retries |
 | **सोया तेल not live by 08:00 IST** | clock — DM as soon as you know, mid-run |
 
 **Do NOT alert for:** a normal clean run, or a stale-paper reuse day (that is expected
 behaviour, not a failure — it goes in the run report, not a Slack DM).
+
+**A run with a failed image is NOT a clean run.** Eight green PUBLISHED lines and a
+failed thumbnail is an alert day. Operator rule, added 2026-09-18: *"need a dm to me if
+any image fails."*
 
 **Judging the poster correctly:** HTTP 200 is NOT proof a post was created. The backend
 returns 200 with `{"success": false, "data":[{"success": false, "error": ...}]}` when the
@@ -237,6 +242,65 @@ existed and the 19th from a resume:
 
 Keep the DM short and factual: posting date, what failed, the error text, what did go
 live, and whether the ledger was pushed. Do not retry the poster.
+
+### 🖼 MANDATORY STEP 8c — IMAGE RECONCILE against image_generation_logs
+
+**The poster is blind to image failures. A green 8/8 run tells you nothing about
+whether the pictures exist.**
+
+`postAutomation/src/index.ts` catches any image error, writes it to
+`image_generation_logs`, and then:
+
+```
+// Continue with default attachment instead of failing the entire post
+```
+
+The post publishes with a placeholder attachment, the backend returns
+`{"success": true}`, and `post_items.py` correctly reports PUBLISHED and exits 0.
+**There is no signal anywhere in the poster's output.** `image_generation_logs`
+(database `main`, via Birbal `query_db`) is the only record.
+
+This was invisible for weeks. Between 2026-09-04 and 2026-09-18, **9 of 15 days
+shipped at least one post with a placeholder thumbnail** — 10 failures in total,
+`Pan India Trending News 2` six times — and not one run reported it. It surfaced on
+2026-09-18 only because the operator spotted रुझान in the feed.
+
+**After every poster run, before the STEP 9b Slack message, run `image_reconcile.sql`
+(repo root) for the posting date and:**
+
+1. **Every `success = 0` row is a failure.** `generation_type` NULL = the post
+   thumbnail (`image_prompt`); `pn_expanded` / `pn_collapsed` = the PN duo images.
+   Report the post name and the verbatim error.
+2. **Check the duo pairs.** The five posts carrying a `pn_image_prompt` — Samachar,
+   दाल/शक्कर, रुझान, TN1, TN2 — must each produce BOTH a `pn_expanded` and a
+   `pn_collapsed` row. The duo block only logs on its success path, so a duo failure
+   leaves **no row at all**; absence is the only signal.
+3. **Name every failure in the run report**, and mark the post in the STEP 9b Slack
+   message (e.g. `5. रुझान — [D2R](…) · ⚠️ image failed`) so the operator knows
+   exactly which ones to regenerate by hand.
+4. **DM Harsh** (`U09K92G1U1X`) — this is an alert condition, see the table above.
+
+**Do NOT regenerate, re-run the poster, or patch the post.** The HARD RULE stands: the
+poster is the last pipeline action and the operator fixes images manually. Your job is
+to *tell him*, accurately and the same morning.
+
+#### ⚠️ "No image URLs returned" is NOT always normal
+
+`expanded_image_url` / `collapsed_image_url` come from postAutomation's
+`duoImageResult`, which is spread into the response **only when the duo images
+succeeded**. So:
+
+- **सोया तेल, Other commodities, Pan India Schemes** carry no `pn_image_prompt` and
+  legitimately return no image URLs. This — and only this — is the "some posts return
+  no image URLs, that is normal" case in STEP 9b.
+- **Samachar, दाल/शक्कर, रुझान, TN1, TN2** all carry a `pn_image_prompt`. If any of
+  them comes back with no `exp`/`col`, **that is a failure, not normal.** Never wave it
+  off, and never report "the rest returned none, which is normal" without first
+  splitting the list into these two groups.
+
+This exact mistake was made on 2026-09-18: three PN-image posts (Samachar, रुझान, TN2)
+returned no URLs, were lumped in with the three that legitimately have none, and the
+whole set was reported as "normal".
 
 ### Ledger field
 

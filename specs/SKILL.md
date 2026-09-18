@@ -94,9 +94,19 @@ day's paper and change the **framing and the images**; **repeated prices are fin
 not a reason to skip or hedge.** A missing new paper never means a missing post day. Full
 rule + precedents: `kirana-posts-content.md` → "WHICH PAPER TO USE — THE LATEST-PAPER RULE".
 
-**If the run fails** (no paper at all, validation stuck, any item fails to publish, or the
-ledger push fails): **Slack DM Harsh — `U09K92G1U1X` — and nobody else.** A stale-paper
-reuse day is NOT a failure and gets no DM. See `kirana-posts-content.md` → "FAILURE ALERTS".
+**If the run fails** (no paper at all, validation stuck, any item fails to publish, **any
+image fails to generate**, or the ledger push fails): **Slack DM Harsh — `U09K92G1U1X` —
+and nobody else.** A stale-paper reuse day is NOT a failure and gets no DM. See
+`kirana-posts-content.md` → "FAILURE ALERTS".
+
+**🖼 The poster cannot see image failures — you must go and look.** postAutomation
+swallows a failed image, publishes the post with a placeholder attachment and returns
+`success: true`, so `post_items.py` reports PUBLISHED and exits 0. After every poster run
+(STEP 8c) run `image_reconcile.sql` against `image_generation_logs` and DM Harsh if
+anything failed. A green 8/8 with a broken thumbnail is an alert day, not a clean run.
+Missing `exp`/`col` URLs are only "normal" for the three posts with no `pn_image_prompt`
+(सोया तेल, Other commodities, Schemes) — for the other five it is a failure. Full rule:
+`kirana-posts-content.md` → "MANDATORY STEP 8c".
 
 **⛔ Never send a post twice.** Launch `post_items.py` **detached**, never in the
 foreground (a foreground cap killed the 2026-08-19 run mid-way). It is at-most-once: an
@@ -129,6 +139,10 @@ run `--force`. Always report every item ID and d2r link. Full rule:
    logic, image_prompt / pn_image_prompt rules, colour schemes, Rujhan VAR rotation).
 5. **Build & validate & emit** with `scripts/emit_posts.py` — pass it the 8 post dicts; it writes
    both files and runs the full validation. Fix anything it flags before presenting.
+5b. **Image reconcile (STEP 8c)** — after the poster returns, run `image_reconcile.sql` for the
+   posting date. Any `success = 0` row, or any of the five `pn_image_prompt` posts missing its
+   `pn_expanded`/`pn_collapsed` pair, is a FAILURE: name it in the report, mark it in the Slack
+   asset-links message, and DM Harsh. Never regenerate or re-post — the operator fixes images.
 6. **Auto-save to Google Drive** — upload both files to the "Kirana Daily Posts" folder per the
    "Auto-save to Google Drive" section above. Standard on every run.
 
